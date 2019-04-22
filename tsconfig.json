@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "outDir": "lib",
+    "strict": true,
+    "target": "es5",
+    "lib": [
+      "esnext",
+      "dom"
+    ],
+    "module": "commonjs",
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "jsx": "react",
+    "baseUrl": "."
+  },
+  "include": [
+    "src"
+  ]
+}

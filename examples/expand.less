@@ -1,0 +1,41 @@
+.colorCard {
+    border: 1px solid cornflowerblue;
+    background: lightskyblue;
+    margin: 8px;
+    width: 300px;
+    border-radius: 3px;
+}
+
+.colorCard-header {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+}
+
+.colorCard-swatch {
+    width: 32px;
+    height: 32px;
+    background: currentColor;
+    display: inline-block;
+    border-radius: 50%;
+}
+
+.colorCard-name {
+    margin-left: 16px;
+}
+
+.colorCard-detail {
+    height: 16px;
+    background: steelblue;
+    margin-top: 16px;
+    border-radius: 8px;
+}
+
+.is-colorCard-expanded .colorCard-swatch {
+    width: 64px;
+    height: 64px;
+}
+
+.is-colorCard-expanded .colorCard-name {
+    font-size: xx-large;
+}

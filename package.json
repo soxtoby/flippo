@@ -1,0 +1,23 @@
+{
+  "name": "flip",
+  "version": "0.1.0",
+  "description": "Flipping easy animations",
+  "main": "lib/index.js",
+  "repository": "https://github.com/soxtoby/flip",
+  "author": "Simon Oxtoby",
+  "license": "MIT",
+  "devDependencies": {
+    "@reach/router": "^1.2.1",
+    "@types/reach__router": "^1.2.3",
+    "@types/react": ">=16.8",
+    "@types/react-dom": ">=16.8",
+    "less": "^3.9.0",
+    "parcel-bundler": "*",
+    "react": ">=16.8",
+    "react-dom": ">=16.8",
+    "typescript": "^3.3.3333"
+  },
+  "dependencies": {
+    "transformation-matrix": "^1.15.3"
+  }
+}
