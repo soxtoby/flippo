@@ -1,4 +1,4 @@
-import { Interpolator, map, interpolate, reduceMap, interpolateMap } from "./animate";
+import { interpolate, interpolateMap, Interpolator, map } from "./animate";
 
 export type StyleProperty = Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule' | 'getPropertyPriority' | 'getPropertyValue' | 'item' | 'removeProperty' | 'setProperty'>;
 export type StyleValues = { [P in StyleProperty]?: CSSStyleDeclaration[P] };
