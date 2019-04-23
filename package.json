@@ -18,6 +18,7 @@
     "typescript": "^3.3.3333"
   },
   "dependencies": {
+    "bezier-easing": "^2.1.0",
     "transformation-matrix": "^1.15.3"
   }
 }

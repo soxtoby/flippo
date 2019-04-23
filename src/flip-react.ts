@@ -1,6 +1,7 @@
 import { cloneElement, createContext, createElement, ReactElement, ReactNode, useContext, useLayoutEffect, useRef } from "react";
-import { flip, Snapshot, snapshot, StyleProperty, defaultAnimate, IFlip } from "./flip";
+import { flip, Snapshot, snapshot, StyleProperty, defaultAnimate, IFlip, Translation, Scaling } from "./flip";
 import { getOrAdd, documentPosition, findLast } from "./utils";
+import { animate, Interpolator, interpolateArray, animateCss, combineAnimations } from "./animate";
 
 export class FlipCollection {
     private elements = new Map<any, IFlippedElement>();
@@ -34,7 +35,7 @@ export class FlipCollection {
         Array.from(this.elements).forEach(([id, flipped]) => this.snapshots.set(id, snapshot(flipped.element, flipped.config.animateProps)));
     }
 
-    async flip(newTriggerData: any, animate = defaultAnimate) {
+    async flip(newTriggerData: any) {
         let entering = Array.from(this.elements.values())
             .filter(flipped => !this.snapshots.has(flipped.config.id));
 
@@ -46,7 +47,7 @@ export class FlipCollection {
 
         this._triggerData = newTriggerData;
 
-        entering.forEach(e => e.element.style.opacity = '0');
+        // entering.forEach(e => e.element.style.opacity = '0');
 
         let parentRects = new Map<HTMLElement, ClientRect>();
 
@@ -58,28 +59,41 @@ export class FlipCollection {
                     position: 'absolute',
                     top: (snapshot.rect.top - parentRect.top) + 'px',
                     left: (snapshot.rect.left - parentRect.left) + 'px',
-                    opacity: 0
-                })
+                    width: snapshot.rect.width + 'px',
+                    height: snapshot.rect.height + 'px',
+                    boxSizing: 'border-box',
+                    //opacity: 0,
+                    margin: 0
+                });
+                snapshot.styles.opacity = snapshot.styles.opacity || '1';
                 e.offsetParent.appendChild(e.element);
             }
         });
 
-        let exits = exiting.map(([removed, snapshot]) => [removed.element, flip(snapshot, removed.element)] as [HTMLElement, IFlip]);
-
         let updates = [] as [HTMLElement, IFlip][];
         for (let [updated, snapshot] of updating) {
-            let parent = findLast(updates, u => u[0].contains(updated.element));
+            let parent = findLast(updates, ([el]) => el.contains(updated.element));
             updates.push([updated.element, flip(snapshot, updated.element, parent && parent[1])]);
         }
 
-        updates.forEach(([element, flip]) => Object.assign(element.style, flip.from));
+        let exits = [] as [HTMLElement, IFlip][];
+        for (let [removed, snapshot] of exiting) {
+            let parent = findLast(exits, ([el]) => el.contains(removed.element))
+                || findLast(updates, ([el]) => el.contains(removed.element));
+            exits.push([removed.element, flip(snapshot, removed.element, parent && parent[1])]);
+        }
 
-        await Promise.all(exits.map(([element, flip]) => animate(element, [flip.from, flip.to])));
+        let updateAnimations = combineAnimations(updates.map(([element, flip]) => combinedAnimation(element, [flip.from, flip.to], flip.transforms)));
+        let exitAnimations = combineAnimations(exits.map(([element, flip]) => combinedAnimation(element, [flip.from, flip.to], flip.transforms)));
+        let enterAnimations = combineAnimations(entering.map(enter => combinedAnimation(enter.element, [{ opacity: 0 }, { opacity: 1 }])));
+
+        await exitAnimations.play();
         exits.forEach(([e]) => e.remove());
-        await Promise.all(updates.map(([element, flip]) => animate(element, [flip.from, flip.to])));
-        updates.forEach(([element, flip]) => Object.assign(element.style, flip.to));
-        await Promise.all(entering.map(enter => animate(enter.element, [{ opacity: 0 }, { opacity: 1 }])));
 
+        await updateAnimations.play();
+        updates.forEach(([element, flip]) => Object.assign(element.style, flip.to));
+
+        await enterAnimations.play();
         entering.forEach(e => e.element.style.opacity = '');
 
         this.removedElements.clear();
@@ -92,6 +106,21 @@ export class FlipCollection {
             .map(e => [e, this.snapshots.get(e.config.id)] as [Element, Snapshot])
             .filter(([, snapshot]) => snapshot);
     }
+}
+
+function combinedAnimation(element: HTMLElement, keyframes: Keyframe[], transforms: Interpolator<Translation | Scaling>[] = []) {
+    let css = animateCss(element, keyframes, 250);
+    let js = animate(interpolateArray(transforms), 250, currentTransforms =>
+        element.style.transform = currentTransforms
+            .flatMap(t => Object.entries(t))
+            .map(([transform, value]) => `${transform}(${value}${units[transform] || ''})`)
+            .join(' '));
+    return combineAnimations([css, js]);
+}
+
+const units: { [transform: string]: string } = {
+    translateX: 'px',
+    translateY: 'px'
 }
 
 const FlipContext = createContext(null as any as FlipCollection);

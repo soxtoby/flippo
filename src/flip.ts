@@ -1,3 +1,5 @@
+import { Interpolator, map, interpolate, reduceMap, interpolateMap } from "./animate";
+
 export type StyleProperty = Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule' | 'getPropertyPriority' | 'getPropertyValue' | 'item' | 'removeProperty' | 'setProperty'>;
 export type StyleValues = { [P in StyleProperty]?: CSSStyleDeclaration[P] };
 
@@ -22,66 +24,69 @@ export function snapshot(element: HTMLElement, extraProperties: StyleProperty[] 
 export interface IFlip {
     previous: Snapshot,
     current: Snapshot,
-    translate: [number, number];
-    scale: [number, number];
+    translate: Interpolator<Translation>;
+    scale: Interpolator<Scaling>;
+    transforms: Interpolator<Translation | Scaling>[],
     from: StyleValues;
     to: StyleValues;
+
+    scaleX: number;
+    scaleY: number;
+    translateX: number;
+    translateY: number;
 }
+
+export type Translation = { translateX: number, translateY: number };
+export type Scaling = { scaleX: number, scaleY: number };
 
 export function flip(previous: Snapshot, target: HTMLElement, parentFlip?: IFlip): IFlip {
     let extraProperties = Object.keys(previous.styles) as StyleProperty[];
     let current = snapshot(target, extraProperties);
 
-    let scale = [previous.rect.width / current.rect.width, previous.rect.height / current.rect.height] as [number, number];
-    let translate = [previous.rect.left - current.rect.left, previous.rect.top - current.rect.top] as [number, number];
+    let scaleX = previous.rect.width / current.rect.width;
+    let scaleY = previous.rect.height / current.rect.height;
+    let translateX = previous.rect.left - current.rect.left;
+    let translateY = previous.rect.top - current.rect.top;
 
-    let parentXOffset = 0;
-    let parentYOffset = 0;
-    let parentXScale = 1;
-    let parentYScale = 1;
-    let undoParentTranslate = '';
-    let undoParentScale = '';
+    let scale = interpolateMap({ scaleX: interpolate(scaleX, 1), scaleY: interpolate(scaleY, 1) });
+    let translate = interpolateMap({ translateX: interpolate(translateX, 0), translateY: interpolate(translateY, 0) });
+
+    let transforms = [] as Interpolator<Translation | Scaling>[];
     if (parentFlip) {
         let leftOffset = current.rect.left - parentFlip.current.rect.left;
-        let scaledLeftOffset = leftOffset * parentFlip.scale[0];
-        let leftOffsetAdjustment = (leftOffset - scaledLeftOffset) / parentFlip.scale[0];
-        parentXOffset = leftOffsetAdjustment - parentFlip.translate[0];
-
         let topOffset = current.rect.top - parentFlip.current.rect.top;
-        let scaledTopOffset = topOffset * parentFlip.scale[1];
-        let topOffsetAdjustment = (topOffset - scaledTopOffset) / parentFlip.scale[1];
-        parentYOffset = topOffsetAdjustment - parentFlip.translate[1];
 
-        parentXScale = 1 / parentFlip.scale[0];
-        parentYScale = 1 / parentFlip.scale[1];
+        let shiftToParentOrigin = interpolateMap({ translateX: interpolate(-leftOffset, 0), translateY: interpolate(-topOffset, 0) });
+        let undoParentScale = map(parentFlip.scale, reverseScaling);
+        let undoParentTranslate = map(parentFlip.translate, reverseTranslation);
+        let shiftToChildOrigin = map(shiftToParentOrigin, reverseTranslation);
 
-        undoParentTranslate = `translate(${parentXOffset}px, ${parentYOffset}px)`;
-        undoParentScale = `scale(${parentXScale}, ${parentYScale})`;
+        transforms.push(shiftToParentOrigin, undoParentScale, undoParentTranslate, shiftToChildOrigin);
     }
+
+    transforms.push(translate, scale);
 
     return {
         previous, current,
-        translate, scale,
+        translate, scale, transforms,
         from: {
             transformOrigin: '0 0',
-            transform: [
-                undoParentTranslate,
-                `translate(${translate[0]}px, ${translate[1]}px)`,
-                undoParentScale,
-                `scale(${scale[0]}, ${scale[1]})`
-            ].join(' '),
             ...previous.styles
         },
         to: {
             transformOrigin: '0 0',
-            transform: 'none',
             ...current.styles
-        }
+        },
+
+        scaleX, scaleY, translateX, translateY
     };
 }
 
 let translatePattern = /translate\(([\d\.]+)px, ([\d\.]+)px\)/;
 let scalePattern = /scale\(([\d\.]+), ([\d\.]+)\)/;
+
+let reverseScaling = ({ scaleX, scaleY }: Scaling) => ({ scaleX: 1 / scaleX, scaleY: 1 / scaleY });
+let reverseTranslation = ({ translateX, translateY }: Translation) => ({ translateX: -translateX, translateY: -translateY });
 
 export function defaultAnimate(element: HTMLElement, keyframes: Keyframe[]): Promise<void> {
     return new Promise(resolve => {
