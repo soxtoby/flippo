@@ -1,5 +1,5 @@
-import { animate, animateCss, combineAnimations, interpolateArray, Interpolator } from "./animate";
-import { flip, IFlip, Scaling, Snapshot, snapshot, StyleProperty, Translation } from "./flip";
+import { animate, animateCss, combineAnimations, interpolateArray, Interpolator, NullAnimation } from "./animate";
+import { flip, IFlip, Scaling, Snapshot, snapshot, StyleProperty, Translation, unflip, ITransition } from "./flip";
 import { documentPosition, findLast, getOrAdd } from "./utils";
 
 interface IFlippedElement {
@@ -20,6 +20,7 @@ interface IRemovedElement extends IFlippedElement {
 export class FlipCollection {
     private elements = new Map<any, IFlippedElement>();
     private removedElements = new Map<any, IRemovedElement>();
+    private undoElements = new Set<HTMLElement>();
     private snapshots = new Map<any, Snapshot>();
     private _triggerData: any;
 
@@ -40,6 +41,14 @@ export class FlipCollection {
             });
             this.elements.delete(id);
         }
+    }
+
+    addUndoElement(element: HTMLElement) {
+        this.undoElements.add(element);
+    }
+
+    removeUndoElement(element: HTMLElement) {
+        this.undoElements.delete(element);
     }
 
     snapshot() {
@@ -76,7 +85,7 @@ export class FlipCollection {
                     width: snapshot.rect.width + 'px',
                     height: snapshot.rect.height + 'px',
                     boxSizing: 'border-box',
-                    //opacity: 0,
+                    opacity: '0',
                     margin: 0
                 });
                 snapshot.styles.opacity = snapshot.styles.opacity || '1';
@@ -84,20 +93,19 @@ export class FlipCollection {
             }
         });
 
-        let updates = [] as [HTMLElement, IFlip][];
-        for (let [updated, snapshot] of updating) {
-            let parent = findLast(updates, ([el]) => el.contains(updated.element));
-            updates.push([updated.element, flip(snapshot, updated.element, parent && parent[1])]);
+        let updates = updating.map(([updated, snapshot]) => [updated.element, flip(snapshot, updated.element)] as const);
+        let exits = exiting.map(([removed, snapshot]) => [removed.element, flip(snapshot, removed.element)] as const);
+
+        let undos = [] as [HTMLElement, ITransition][];
+        for (let element of Array.from(this.undoElements)) {
+            let parent = findLast(updates, ([el]) => el.contains(element));
+            if (parent)
+                undos.push([element, unflip(element, parent[1])]);
         }
 
-        let exits = [] as [HTMLElement, IFlip][];
-        for (let [removed, snapshot] of exiting) {
-            let parent = findLast(exits, ([el]) => el.contains(removed.element))
-                || findLast(updates, ([el]) => el.contains(removed.element));
-            exits.push([removed.element, flip(snapshot, removed.element, parent && parent[1])]);
-        }
-
-        let updateAnimations = combineAnimations(updates.map(([element, flip]) => combinedAnimation(element, [flip.from, flip.to], flip.transforms)));
+        let updateAnimations = combineAnimations(
+            updates.map(([element, flip]) => combinedAnimation(element, [flip.from, flip.to], flip.transforms))
+                .concat(undos.map(([element, transition]) => combinedAnimation(element, [transition.from, transition.to], transition.transforms))));
         let exitAnimations = combineAnimations(exits.map(([element, flip]) => combinedAnimation(element, [flip.from, flip.to], flip.transforms)));
         let enterAnimations = combineAnimations(entering.map(enter => combinedAnimation(enter.element, [{ opacity: 0 }, { opacity: 1 }])));
 
@@ -123,12 +131,13 @@ export class FlipCollection {
 }
 
 function combinedAnimation(element: HTMLElement, keyframes: Keyframe[], transforms: Interpolator<Translation | Scaling>[] = []) {
-    let css = animateCss(element, keyframes, 250);
-    let js = animate(interpolateArray(transforms), 250, currentTransforms =>
+    let css = keyframes.length ? animateCss(element, keyframes, 300) : NullAnimation;
+    let js = transforms.length ? animate(interpolateArray(transforms), 300, currentTransforms =>
         element.style.transform = currentTransforms
             .flatMap(t => Object.entries(t))
             .map(([transform, value]) => `${transform}(${value}${units[transform] || ''})`)
-            .join(' '));
+            .join(' '))
+        : NullAnimation;
     return combineAnimations([css, js]);
 }
 

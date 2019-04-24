@@ -38,8 +38,13 @@ export function Flipped(props: IFlippedProps) {
     return cloneElement(children, { ref });
 }
 
+export function Unflipped(props: { children: ReactElement }) {
+    let ref = useUnflip();
+    return cloneElement(props.children, { ref });
+}
+
 export function useFlip(config: IFlipConfig) {
-    let ref = useRef<HTMLElement>(null);
+    let ref = useRef<HTMLElement>();
     let flipCollection = useContext(FlipContext);
 
     useLayoutEffect(() => {
@@ -48,5 +53,18 @@ export function useFlip(config: IFlipConfig) {
         return () => flipCollection.removeElement(registeredId);
     });
 
-    return ref;
+    return (e: HTMLElement) => { ref.current = e; };
+}
+
+export function useUnflip() {
+    let ref = useRef<HTMLElement>();
+    let flipCollection = useContext(FlipContext);
+
+    useLayoutEffect(() => {
+        const element = (ref.current!);
+        flipCollection.addUndoElement(element);
+        return () => flipCollection.removeUndoElement(element);
+    });
+
+    return (e: HTMLElement) => { ref.current = e; };
 }

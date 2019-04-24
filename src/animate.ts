@@ -50,6 +50,8 @@ export interface Animation {
     play(): Promise<void>;
 }
 
+export const NullAnimation = { play: () => Promise.resolve() };
+
 export function animate<T>(interpolate: Interpolator<T>, durationMs: number, apply: (current: T) => void): Animation {
     apply(interpolate(0));
 

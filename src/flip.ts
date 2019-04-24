@@ -21,14 +21,17 @@ export function snapshot(element: HTMLElement, extraProperties: StyleProperty[] 
     };
 }
 
-export interface IFlip {
+export interface ITransition {
+    from: StyleValues;
+    to: StyleValues;
+    transforms: Interpolator<Translation | Scaling>[];
+}
+
+export interface IFlip extends ITransition {
     previous: Snapshot,
     current: Snapshot,
     translate: Interpolator<Translation>;
     scale: Interpolator<Scaling>;
-    transforms: Interpolator<Translation | Scaling>[],
-    from: StyleValues;
-    to: StyleValues;
 
     scaleX: number;
     scaleY: number;
@@ -39,7 +42,7 @@ export interface IFlip {
 export type Translation = { translateX: number, translateY: number };
 export type Scaling = { scaleX: number, scaleY: number };
 
-export function flip(previous: Snapshot, target: HTMLElement, parentFlip?: IFlip): IFlip {
+export function flip(previous: Snapshot, target: HTMLElement): IFlip {
     let extraProperties = Object.keys(previous.styles) as StyleProperty[];
     let current = snapshot(target, extraProperties);
 
@@ -51,24 +54,10 @@ export function flip(previous: Snapshot, target: HTMLElement, parentFlip?: IFlip
     let scale = interpolateMap({ scaleX: interpolate(scaleX, 1), scaleY: interpolate(scaleY, 1) });
     let translate = interpolateMap({ translateX: interpolate(translateX, 0), translateY: interpolate(translateY, 0) });
 
-    let transforms = [] as Interpolator<Translation | Scaling>[];
-    if (parentFlip) {
-        let leftOffset = current.rect.left - parentFlip.current.rect.left;
-        let topOffset = current.rect.top - parentFlip.current.rect.top;
-
-        let shiftToParentOrigin = interpolateMap({ translateX: interpolate(-leftOffset, 0), translateY: interpolate(-topOffset, 0) });
-        let undoParentScale = map(parentFlip.scale, reverseScaling);
-        let undoParentTranslate = map(parentFlip.translate, reverseTranslation);
-        let shiftToChildOrigin = map(shiftToParentOrigin, reverseTranslation);
-
-        transforms.push(shiftToParentOrigin, undoParentScale, undoParentTranslate, shiftToChildOrigin);
-    }
-
-    transforms.push(translate, scale);
-
     return {
         previous, current,
-        translate, scale, transforms,
+        translate, scale,
+        transforms: [translate, scale],
         from: {
             transformOrigin: '0 0',
             ...previous.styles
@@ -82,8 +71,23 @@ export function flip(previous: Snapshot, target: HTMLElement, parentFlip?: IFlip
     };
 }
 
-let translatePattern = /translate\(([\d\.]+)px, ([\d\.]+)px\)/;
-let scalePattern = /scale\(([\d\.]+), ([\d\.]+)\)/;
+export function unflip(target: HTMLElement, parentFlip: IFlip) {
+    let current = snapshot(target);
+
+    let leftOffset = current.rect.left - parentFlip.current.rect.left;
+    let topOffset = current.rect.top - parentFlip.current.rect.top;
+
+    let shiftToParentOrigin = interpolateMap({ translateX: interpolate(-leftOffset, 0), translateY: interpolate(-topOffset, 0) });
+    let undoParentScale = map(parentFlip.scale, reverseScaling);
+    let undoParentTranslate = map(parentFlip.translate, reverseTranslation);
+    let shiftToChildOrigin = map(shiftToParentOrigin, reverseTranslation);
+
+    return {
+        from: { transformOrigin: '0 0' },
+        to: { transformOrigin: '0 0' },
+        transforms: [shiftToParentOrigin, undoParentScale, undoParentTranslate, shiftToChildOrigin]
+    };
+}
 
 let reverseScaling = ({ scaleX, scaleY }: Scaling) => ({ scaleX: 1 / scaleX, scaleY: 1 / scaleY });
 let reverseTranslation = ({ translateX, translateY }: Translation) => ({ translateX: -translateX, translateY: -translateY });
