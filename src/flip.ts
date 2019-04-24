@@ -42,10 +42,7 @@ export interface IFlip extends ITransition {
 export type Translation = { translateX: number, translateY: number };
 export type Scaling = { scaleX: number, scaleY: number };
 
-export function flip(previous: Snapshot, target: HTMLElement): IFlip {
-    let extraProperties = Object.keys(previous.styles) as StyleProperty[];
-    let current = snapshot(target, extraProperties);
-
+export function flip(previous: Snapshot, current: Snapshot, target: HTMLElement): IFlip {
     let scaleX = previous.rect.width / current.rect.width;
     let scaleY = previous.rect.height / current.rect.height;
     let translateX = previous.rect.left - current.rect.left;

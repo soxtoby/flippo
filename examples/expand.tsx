@@ -18,17 +18,15 @@ function ColorCard({ color, expanded, onClick }: { color: string, expanded: bool
     return <Flipped id={color}>
         <div className={expanded ? 'colorCard is-colorCard-expanded' : 'colorCard'} onClick={onClick}>
             <Unflipped>
-                <div className="colorCard-header">
-                    <Flipped id={color + '-swatch'}>
-                        <div className="colorCard-swatch" style={{ color }}></div>
-                    </Flipped>
-                    <Flipped id={color + '-name'}>
-                        <div className="colorCard-name">{color}</div>
-                    </Flipped>
-                </div>
-            </Unflipped>
-            <Unflipped>
                 <div>
+                    <div className="colorCard-header">
+                        <Flipped id={color + '-swatch'}>
+                            <div className="colorCard-swatch" style={{ color }}></div>
+                        </Flipped>
+                        <Flipped id={color + '-name'}>
+                            <div className="colorCard-name">{color}</div>
+                        </Flipped>
+                    </div>
                     {expanded && <>
                         <Flipped id={color + '-detail1'}><div className="colorCard-detail"></div></Flipped>
                         <Flipped id={color + '-detail2'}><div className="colorCard-detail"></div></Flipped>
