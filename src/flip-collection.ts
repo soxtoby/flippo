@@ -5,6 +5,7 @@ import { documentPosition, findLast, getOrAdd } from "./utils";
 
 interface IFlippedElement {
     element: HTMLElement;
+    offsetParent: HTMLElement;
     config: IFlipConfig;
 }
 
@@ -16,13 +17,9 @@ export interface IFlipConfig {
     exitStyles?: StyleValues;
 }
 
-interface IRemovedElement extends IFlippedElement {
-    offsetParent: HTMLElement | null;
-}
-
 export class FlipCollection {
     private elements = new Map<any, IFlippedElement>();
-    private removedElements = new Map<any, IRemovedElement>();
+    private removedElements = new Map<any, IFlippedElement>();
     private undoElements = new Set<HTMLElement>();
     private snapshots = new Map<any, Snapshot>();
     private _triggerData: any;
@@ -30,7 +27,7 @@ export class FlipCollection {
     get triggerData() { return this._triggerData; }
 
     addElement(element: HTMLElement, config: IFlipConfig) {
-        this.elements.set(config.id, { element, config });
+        this.elements.set(config.id, { element, config, offsetParent: element.offsetParent as HTMLElement });
         this.removedElements.delete(config.id);
     }
 
@@ -39,7 +36,7 @@ export class FlipCollection {
         if (flipped) {
             this.removedElements.set(id, {
                 element: flipped.element.cloneNode(true) as HTMLElement,
-                offsetParent: flipped.element.offsetParent as HTMLElement | null,
+                offsetParent: flipped.offsetParent,
                 config: flipped.config
             });
             this.elements.delete(id);
