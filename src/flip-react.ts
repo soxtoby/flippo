@@ -32,13 +32,13 @@ export interface IFlippedProps extends IFlipConfig {
     children: ReactElement
 }
 
-export function Flipped(props: IFlippedProps) {
+export function Flip(props: IFlippedProps) {
     let { children, ...config } = props;
     let ref = useFlip(config);
     return cloneElement(children, { ref });
 }
 
-export function Unflipped(props: { children: ReactElement }) {
+export function Unflip(props: { children: ReactElement }) {
     let ref = useUnflip();
     return cloneElement(props.children, { ref });
 }
@@ -61,7 +61,7 @@ export function useUnflip() {
     let flipCollection = useContext(FlipContext);
 
     useLayoutEffect(() => {
-        const element = (ref.current!);
+        let element = ref.current!;
         flipCollection.addUndoElement(element);
         return () => flipCollection.removeUndoElement(element);
     });

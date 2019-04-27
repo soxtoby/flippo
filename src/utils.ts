@@ -1,10 +1,7 @@
 export function getOrAdd<K, V>(map: Map<K, V>, key: K, getValue: () => V) {
-    let value = map.get(key);
-    if (value == null) {
-        value = getValue();
-        map.set(key, value);
-    }
-    return value;
+    if (!map.has(key))
+        map.set(key, getValue());
+    return map.get(key)!;
 }
 
 export function documentPosition(a: Node, b: Node) {

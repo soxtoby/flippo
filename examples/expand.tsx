@@ -1,8 +1,8 @@
-import './expand.less';
 import * as React from "react";
 import { useState } from "react";
+import { Flip, FlipScope, Unflip } from "../lib/flip-react";
 import { colors } from "./colors";
-import { FlipScope, Flipped, Unflipped } from "../lib/flip-react";
+import "./expand.less";
 
 export function Expand(props: { path: string }) {
     let [expandedIndex, setExpandedIndex] = useState(0);
@@ -15,25 +15,25 @@ export function Expand(props: { path: string }) {
 }
 
 function ColorCard({ color, expanded, onClick }: { color: string, expanded: boolean, onClick: () => void }) {
-    return <Flipped id={color}>
+    return <Flip id={color}>
         <div className={expanded ? 'colorCard is-colorCard-expanded' : 'colorCard'} onClick={onClick}>
-            <Unflipped>
+            <Unflip>
                 <div>
                     <div className="colorCard-header">
-                        <Flipped id={color + '-swatch'}>
+                        <Flip id={color + '-swatch'}>
                             <div className="colorCard-swatch" style={{ color }}></div>
-                        </Flipped>
-                        <Flipped id={color + '-name'}>
+                        </Flip>
+                        <Flip id={color + '-name'}>
                             <div className="colorCard-name">{color}</div>
-                        </Flipped>
+                        </Flip>
                     </div>
                     {expanded && <>
-                        <Flipped id={color + '-detail1'}><div className="colorCard-detail"></div></Flipped>
-                        <Flipped id={color + '-detail2'}><div className="colorCard-detail"></div></Flipped>
-                        <Flipped id={color + '-detail3'}><div className="colorCard-detail"></div></Flipped>
+                        <Flip id={color + '-detail1'}><div className="colorCard-detail"></div></Flip>
+                        <Flip id={color + '-detail2'}><div className="colorCard-detail"></div></Flip>
+                        <Flip id={color + '-detail3'}><div className="colorCard-detail"></div></Flip>
                     </>}
                 </div>
-            </Unflipped>
+            </Unflip>
         </div>
-    </Flipped>;
+    </Flip>;
 }

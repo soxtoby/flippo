@@ -1,8 +1,12 @@
-import { TimingFunction, delay, CssTimingFunction } from "./timing";
+import bezier = require("bezier-easing");
 
 export type InterpolatorArray<T extends any[]> = { [K in keyof T]: Interpolator<T[K]> };
 export type InterpolatorMap<T extends object> = { [K in keyof T]: Interpolator<T[K]> };
 export type Interpolator<T> = (progress: number) => T;
+export interface Animation { play(): Promise<void>; }
+export type StyleProperty = Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule' | 'getPropertyPriority' | 'getPropertyValue' | 'item' | 'removeProperty' | 'setProperty'>;
+export type StyleValues = { [P in StyleProperty]?: CSSStyleDeclaration[P] };
+export type TimingFunction = ((progress: number) => number) & { css: string };
 
 export function interpolate(from: number, to: number): Interpolator<number> {
     return (progress: number) => from + progress * (to - from);
@@ -39,35 +43,28 @@ export function map<A, B>(interpolator: Interpolator<A>, map: (interpolated: A) 
     };
 }
 
-export function reduceMap<In extends object, Out>(interpolators: InterpolatorMap<In>, reduce: (values: In) => Out): Interpolator<Out> {
-    return map(interpolateMap(interpolators), reduce);
+export function delay<T>(interpolator: Interpolator<T>, fraction: number): Interpolator<T> {
+    return fraction
+        ? progress => interpolator(progress < fraction ? 0
+            : (progress - fraction) / (1 - fraction))
+        : interpolator;
 }
 
-export function reduceArray<In extends any[], Out>(interpolators: InterpolatorArray<In>, reduce: (values: In) => Out): Interpolator<Out> {
-    return map(interpolateArray(interpolators), reduce);
-}
-
-export interface Animation {
-    play(): Promise<void>;
-}
-
-export const NullAnimation: Animation = { play: () => Promise.resolve() };
-
-export function animate<T>(interpolate: Interpolator<T>, durationMs: number, delayMs: number, apply: (current: T) => void): Animation {
-    apply(interpolate(0));
+export function animate(element: HTMLElement, interpolate: Interpolator<StyleValues>, durationMs: number, delayMs: number): Animation {
+    Object.assign(element.style, interpolate(0));
 
     return {
         play: () => new Promise(resolve => {
             let start = performance.now();
             let totalDuration = durationMs + delayMs;
-            let delayedInterpolate = delayMs ? applyTiming(interpolate, delay(delayMs / totalDuration)) : interpolate;
+            let delayedInterpolate = delay(interpolate, delayMs / totalDuration);
 
             nextFrame(start);
 
             function nextFrame(now: number) {
                 let progress = Math.min((now - start) / totalDuration, 1);
 
-                apply(delayedInterpolate(progress));
+                Object.assign(element.style, delayedInterpolate(progress));
 
                 if (progress < 1)
                     requestAnimationFrame(nextFrame);
@@ -78,7 +75,7 @@ export function animate<T>(interpolate: Interpolator<T>, durationMs: number, del
     };
 }
 
-export function animateCss(element: HTMLElement, keyframes: Keyframe[], durationMs: number, delayMs: number, timing: CssTimingFunction): Animation {
+export function animateCss(element: HTMLElement, keyframes: Keyframe[], durationMs: number, delayMs: number, timing: TimingFunction): Animation {
     let animation = element.animate(keyframes, { duration: durationMs, delay: delayMs, easing: timing.css, fill: 'both' });
     animation.pause();
     return {
@@ -93,4 +90,14 @@ export function combineAnimations(animations: Animation[]): Animation {
     return {
         play: (...args: Parameters<Animation['play']>) => Promise.all(animations.map(a => a.play(...args))) as any
     };
+}
+
+export const timing = {
+    update: cubicBezier(.4, 0, .2, 1),
+    enter: cubicBezier(0, 0, .2, 1),
+    exit: cubicBezier(.4, 0, 1, 1)
+};
+
+function cubicBezier(x1: number, y1: number, x2: number, y2: number): TimingFunction {
+    return Object.assign(bezier(x1, y1, x2, y2), { css: `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})` });
 }
