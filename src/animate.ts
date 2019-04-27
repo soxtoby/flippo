@@ -79,7 +79,7 @@ export function animate<T>(interpolate: Interpolator<T>, durationMs: number, del
 }
 
 export function animateCss(element: HTMLElement, keyframes: Keyframe[], durationMs: number, delayMs: number, timing: CssTimingFunction): Animation {
-    let animation = element.animate(keyframes, { duration: durationMs, delay: delayMs, easing: timing.css, fill: 'backwards' });
+    let animation = element.animate(keyframes, { duration: durationMs, delay: delayMs, easing: timing.css, fill: 'both' });
     animation.pause();
     return {
         play: () => new Promise<void>(resolve => {

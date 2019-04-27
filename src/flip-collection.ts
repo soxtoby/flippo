@@ -71,6 +71,8 @@ export class FlipCollection {
             .filter(([removed]) => removed.offsetParent && removed.offsetParent.ownerDocument);
 
         this._triggerData = newTriggerData;
+        this.removedElements.clear();
+        this.snapshots.clear();
 
         let parentRects = new Map<HTMLElement, ClientRect>();
 
@@ -116,9 +118,6 @@ export class FlipCollection {
                 updates.forEach(([element, flip]) => Object.assign(element.style, flip.to));
                 exits.forEach(([e]) => e.remove());
                 enters.forEach(([e]) => e.style.opacity = '');
-
-                this.removedElements.clear();
-                this.snapshots.clear();
             });
     }
 
