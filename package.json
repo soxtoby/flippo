@@ -1,6 +1,7 @@
 {
   "name": "flip",
   "version": "0.1.0",
+  "private": true,
   "description": "Flipping easy animations",
   "main": "lib/index.js",
   "repository": "https://github.com/soxtoby/flip",
@@ -20,5 +21,8 @@
   "dependencies": {
     "bezier-easing": "^2.1.0",
     "transformation-matrix": "^1.15.3"
+  },
+  "peerDependencies": {
+    "react": ">=16.8"
   }
 }
