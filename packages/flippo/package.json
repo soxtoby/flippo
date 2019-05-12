@@ -4,7 +4,12 @@
   "description": "Flipping easy transitions",
   "main": "lib/index.js",
   "types": "lib/index",
-  "repository": "https://github.com/soxtoby/flippo",
+  "homepage": "https://github.com/soxtoby/flippo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soxtoby/flippo.git",
+    "directory": "packages/flippo"
+  },
   "author": "Simon Oxtoby",
   "license": "MIT",
   "files": [
