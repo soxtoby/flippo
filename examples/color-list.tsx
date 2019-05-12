@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
-import { Flip, FlipScope } from "../lib/flip-react";
+import { Flip, FlipScope } from "flippo-react";
 import "./color-list.less";
 import { colors } from "./colors";
 

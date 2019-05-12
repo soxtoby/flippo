@@ -1,20 +1,12 @@
 {
-  "compilerOptions": {
-    "outDir": "lib",
-    "strict": true,
-    "target": "es5",
-    "lib": [
-      "esnext",
-      "dom"
-    ],
-    "module": "commonjs",
-    "declaration": true,
-    "declarationMap": true,
-    "inlineSourceMap": true,
-    "inlineSources": true,
-    "jsx": "react"
-  },
-  "include": [
-    "src"
-  ]
+    "extends": "./tsconfig.base.json",
+    "files": [],
+    "references": [
+        {
+            "path": "packages/flippo"
+        },
+        {
+            "path": "packages/flippo-react"
+        },
+    ]
 }

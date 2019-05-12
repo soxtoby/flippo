@@ -1,0 +1,23 @@
+{
+  "name": "flippo-react",
+  "version": "0.1.0",
+  "description": "Flipping easy transitions in react",
+  "main": "lib/index.js",
+  "types": "lib/index",
+  "repository": "https://github.com/soxtoby/flippo",
+  "author": "Simon Oxtoby",
+  "license": "MIT",
+  "files": [
+    "lib"
+  ],
+  "devDependencies": {
+    "@types/react": ">=16.8",
+    "react": ">=16.8"
+  },
+  "dependencies": {
+    "flippo": ">=0.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=16.8"
+  }
+}

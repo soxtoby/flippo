@@ -1,28 +1,17 @@
 {
-  "name": "flip",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Flipping easy animations",
-  "main": "lib/index.js",
-  "repository": "https://github.com/soxtoby/flip",
-  "author": "Simon Oxtoby",
-  "license": "MIT",
-  "devDependencies": {
-    "@reach/router": "^1.2.1",
-    "@types/reach__router": "^1.2.3",
-    "@types/react": ">=16.8",
-    "@types/react-dom": ">=16.8",
-    "less": "^3.9.0",
-    "parcel-bundler": "*",
-    "react": ">=16.8",
-    "react-dom": ">=16.8",
-    "typescript": "^3.3.3333"
-  },
-  "dependencies": {
-    "bezier-easing": "^2.1.0",
-    "transformation-matrix": "^1.15.3"
-  },
-  "peerDependencies": {
-    "react": ">=16.8"
-  }
+    "name": "flippo-root",
+    "version": "1",
+    "private": true,
+    "workspaces": [
+        "packages/*",
+        "examples"
+    ],
+    "scripts": {
+        "prepare": "tsc -b",
+        "watch": "tsc -b -w",
+        "examples": "cd examples && parcel index.html --open"
+    },
+    "devDependencies": {
+        "typescript": "*"
+    }
 }

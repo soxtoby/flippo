@@ -1,5 +1,5 @@
 import { cloneElement, createContext, createElement, ReactElement, ReactNode, useContext, useLayoutEffect, useRef } from "react";
-import { FlipCollection, IFlipConfig } from "./flip-collection";
+import { FlipCollection, IFlipConfig } from "flippo";
 
 const FlipContext = createContext(null as any as FlipCollection);
 

@@ -1,0 +1,16 @@
+{
+  "name": "flippo",
+  "version": "0.1.0",
+  "description": "Flipping easy transitions",
+  "main": "lib/index.js",
+  "types": "lib/index",
+  "repository": "https://github.com/soxtoby/flippo",
+  "author": "Simon Oxtoby",
+  "license": "MIT",
+  "files": [
+    "lib"
+  ],
+  "dependencies": {
+    "bezier-easing": "^2.1.0"
+  }
+}
