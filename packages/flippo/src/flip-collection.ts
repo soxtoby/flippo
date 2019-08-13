@@ -1,5 +1,5 @@
 import { animate, animateCss, Animation, applyTiming, combineAnimations, interpolateArray, Interpolator, map, StyleProperty, StyleValues, timing, TimingFunction } from "./animation";
-import { flip, IFlip, ITransition, Scaling, Snapshot, snapshot, Translation, unflip } from "./flip";
+import { flip, IFlip, ITransition, Scaling, Snapshot, snapshot, Translation } from "./flip";
 import { documentPosition, findLast, getOrAdd } from "./utils";
 
 export interface IFlipConfig {
@@ -13,7 +13,6 @@ export interface IFlipConfig {
 export class FlipCollection {
     private elements = new Map<any, ITrackedElement>();
     private removedElements = new Map<any, ITrackedElement>();
-    private undoElements = new Set<HTMLElement>();
     private snapshots = new Map<any, Snapshot>();
     private animations = new Map<HTMLElement, Animation>();
     private _triggerData: any;
@@ -37,14 +36,6 @@ export class FlipCollection {
         }
     }
 
-    addUndoElement(element: HTMLElement) {
-        this.undoElements.add(element);
-    }
-
-    removeUndoElement(element: HTMLElement) {
-        this.undoElements.delete(element);
-    }
-
     snapshot() {
         this.snapshots.clear();
         this.removedElements.clear();
@@ -60,11 +51,6 @@ export class FlipCollection {
         let updates = addFlips(toUpdate, true);
         let updateAnimations = this.animateTransitions(updates, totalDuration, 0, timing.update);
 
-        let toUndo = this.getUndoingElements(updates);
-        this.finishPendingAnimations(toUndo);
-        let undos = addUndos(toUndo);
-        let undoAnimations = this.animateTransitions(undos, totalDuration, 0, timing.update);
-
         let toExit = this.getExitingElements();
         applyExitStyles(toExit);
         let exits = addFlips(toExit, true);
@@ -76,12 +62,11 @@ export class FlipCollection {
         removeEntryStyles(entryStyleChanges);
         let enterAnimations = this.animateTransitions(enters, totalDuration * .7, totalDuration * .3, timing.enter);
 
-        let fullAnimation = combineAnimations([updateAnimations, undoAnimations, exitAnimations, enterAnimations]);
+        let fullAnimation = combineAnimations([updateAnimations, exitAnimations, enterAnimations]);
 
         fullAnimation.play()
             .then(() => {
                 this.finishPendingAnimations(updates);
-                this.finishPendingAnimations(undos);
                 this.finishPendingAnimations(enters);
                 exits.forEach(({ element }) => element.remove());
             });
@@ -122,20 +107,6 @@ export class FlipCollection {
             .filter(({ snapshot }) => snapshot);
     }
 
-    private getUndoingElements(updates: IFlippingElement[]): IElementToUndo[] {
-        return Array.from(this.undoElements.values())
-            .flatMap(element => {
-                let parent = findLast(updates, ({ element: updateElement }) => updateElement.contains(element));
-                return parent
-                    ? [{
-                        element,
-                        parentFlip: parent.transition,
-                        snapshot: snapshot(element)
-                    }]
-                    : [];
-            })
-    }
-
     private animateTransitions(transitions: { element: HTMLElement, transition: ITransition }[], durationMs: number, delayMs: number, timing: TimingFunction) {
         return combineAnimations(
             transitions
@@ -151,7 +122,7 @@ export class FlipCollection {
                 }));
     }
 
-    private finishPendingAnimations(animating: ISnapshottedElement[]) {
+    private finishPendingAnimations(animating: IElementToFlip[]) {
         animating.forEach(({ element }) => {
             let animation = this.animations.get(element)
             if (animation) {
@@ -162,24 +133,22 @@ export class FlipCollection {
     }
 }
 
-function addFlips(toFlip: IElementToFlip[], snapshotIsPrevious: boolean): IFlippingElement[] {
-    return toFlip.map(element => ({
-        ...element,
-        transition: snapshotIsPrevious
-            ? flip(element.snapshot, getSnapshot(element.tracked))
-            : flip(getSnapshot(element.tracked), element.snapshot)
-    }));
+function addFlips(elementsToFlip: IElementToFlip[], snapshotIsPrevious: boolean): IFlippingElement[] {
+    let flippedElements = [] as IFlippingElement[];
+    elementsToFlip.forEach(toFlip => {
+        let parent = findLast(flippedElements, flipped => flipped.element.contains(toFlip.element));
+        flippedElements.push({
+            ...toFlip,
+            transition: snapshotIsPrevious
+                ? flip(toFlip.snapshot, getSnapshot(toFlip.tracked), parent && parent.transition)
+                : flip(getSnapshot(toFlip.tracked), toFlip.snapshot, parent && parent.transition)
+        });
+    });
+    return flippedElements;
 }
 
 function getSnapshot(flipped: ITrackedElement) {
     return snapshot(flipped.element, flipped.config.animateProps);
-}
-
-function addUndos(toUndo: IElementToUndo[]): IUndoElement[] {
-    return toUndo.map(element => ({
-        ...element,
-        transition: unflip(element.snapshot, element.parentFlip)
-    }));
 }
 
 function applyEntryStyles(entering: IElementToFlip[]) {
@@ -232,23 +201,12 @@ interface ITrackedElement {
     config: IFlipConfig;
 }
 
-interface ISnapshottedElement {
+interface IElementToFlip {
     element: HTMLElement;
     snapshot: Snapshot;
-}
-
-interface IElementToFlip extends ISnapshottedElement {
     tracked: ITrackedElement;
 }
 
 interface IFlippingElement extends IElementToFlip {
     transition: IFlip;
-}
-
-interface IElementToUndo extends ISnapshottedElement {
-    parentFlip: IFlip;
-}
-
-interface IUndoElement extends IElementToUndo {
-    transition: ITransition;
 }

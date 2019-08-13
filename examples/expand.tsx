@@ -17,23 +17,19 @@ export function Expand(props: { path: string }) {
 function ColorCard({ color, expanded, onClick }: { color: string, expanded: boolean, onClick: () => void }) {
     return <Flip id={color}>
         <div className={expanded ? 'colorCard is-colorCard-expanded' : 'colorCard'} onClick={onClick}>
-            <Unflip>
-                <div>
-                    <div className="colorCard-header">
-                        <Flip id={color + '-swatch'}>
-                            <div className="colorCard-swatch" style={{ color }}></div>
-                        </Flip>
-                        <Flip id={color + '-name'}>
-                            <div className="colorCard-name">{color}</div>
-                        </Flip>
-                    </div>
-                    {expanded && <>
-                        <Flip id={color + '-detail1'}><div className="colorCard-detail"></div></Flip>
-                        <Flip id={color + '-detail2'}><div className="colorCard-detail"></div></Flip>
-                        <Flip id={color + '-detail3'}><div className="colorCard-detail"></div></Flip>
-                    </>}
-                </div>
-            </Unflip>
+            <div className="colorCard-header">
+                <Flip id={color + '-swatch'}>
+                    <div className="colorCard-swatch" style={{ color }}></div>
+                </Flip>
+                <Flip id={color + '-name'}>
+                    <div className="colorCard-name">{color}</div>
+                </Flip>
+            </div>
+            {expanded && <>
+                <Flip id={color + '-detail1'}><div className="colorCard-detail"></div></Flip>
+                <Flip id={color + '-detail2'}><div className="colorCard-detail"></div></Flip>
+                <Flip id={color + '-detail3'}><div className="colorCard-detail"></div></Flip>
+            </>}
         </div>
     </Flip>;
 }
