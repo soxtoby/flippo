@@ -1,4 +1,4 @@
-import { animate, animateCss, applyTiming, combineAnimations, interpolateArray, Interpolator, map, StyleProperty, StyleValues, timing, TimingFunction } from "./animation";
+import { animate, animateCss, applyTiming, combineAnimations, interpolateArray, Interpolator, map, StyleProperty, StyleValues, timing, TimingFunction, Animation } from "./animation";
 import { flip, IFlip, ITransition, Scaling, Snapshot, snapshot, Translation, unflip } from "./flip";
 import { documentPosition, findLast, getOrAdd } from "./utils";
 
@@ -21,6 +21,7 @@ export class FlipCollection {
     private removedElements = new Map<any, IFlippedElement>();
     private undoElements = new Set<HTMLElement>();
     private snapshots = new Map<any, Snapshot>();
+    private animations = new Map<HTMLElement, Animation>();
     private _triggerData: any;
 
     get triggerData() { return this._triggerData; }
@@ -61,29 +62,34 @@ export class FlipCollection {
         let totalDuration = 300;
 
         let updating = this.getUpdatingElements(newTriggerData);
+        this.finishPendingAnimations(updating.map(([updated]) => [updated.element]));
         let updates = getTransitions(updating.map(([updated, previous]) => [updated, previous, getSnapshot(updated)]));
-        let updateAnimations = animateTransitions(updates, totalDuration, 0, timing.update);
+        let updateAnimations = this.animateTransitions(updates, totalDuration, 0, timing.update);
 
-        let undos = getUndos(this.undoElements, updates);
-        let undoAnimations = animateTransitions(undos, totalDuration, 0, timing.update);
+        let undoing = this.getUndoingElements(updates);
+        this.finishPendingAnimations(undoing);
+        let undos = getUndos(undoing);
+        let undoAnimations = this.animateTransitions(undos, totalDuration, 0, timing.update);
 
         let exiting = this.getExitingElements();
         applyExitStyles(exiting);
         let exits = getTransitions(exiting.map(([removed, previous]) => [removed, previous, getSnapshot(removed)]));
-        let exitAnimations = animateTransitions(exits, totalDuration * .3, 0, timing.exit);
+        let exitAnimations = this.animateTransitions(exits, totalDuration * .3, 0, timing.exit);
 
         let entering = this.getEnteringElements();
-        applyEntryStyles(entering);
+        let entryStyleChanges = applyEntryStyles(entering);
         let enters = getTransitions(entering.map(([flipped, current]) => [flipped, getSnapshot(flipped), current]));
-        let enterAnimations = animateTransitions(enters, totalDuration * .7, totalDuration * .3, timing.enter);
+        removeEntryStyles(entryStyleChanges);
+        let enterAnimations = this.animateTransitions(enters, totalDuration * .7, totalDuration * .3, timing.enter);
 
         let fullAnimation = combineAnimations([updateAnimations, undoAnimations, exitAnimations, enterAnimations]);
 
         fullAnimation.play()
             .then(() => {
-                updates.forEach(([element, flip]) => Object.assign(element.style, flip.to));
-                exits.forEach(([e]) => e.remove());
-                enters.forEach(([e]) => e.style.opacity = '');
+                this.finishPendingAnimations(updating.map(([updated]) => [updated.element]));
+                this.finishPendingAnimations(undoing);
+                this.finishPendingAnimations(entering.map(([entered]) => [entered.element]));
+                exits.forEach(([element]) => element.remove());
             });
 
         this._triggerData = newTriggerData;
@@ -114,6 +120,41 @@ export class FlipCollection {
             .map(e => [e, this.snapshots.get(e.config.id)!] as const)
             .filter(([, snapshot]) => snapshot);
     }
+
+    private getUndoingElements(updates: (readonly [HTMLElement, IFlip])[]) {
+        return Array.from(this.undoElements.values())
+            .flatMap(undoElement => {
+                let parent = findLast(updates, ([updatedElement]) => updatedElement.contains(undoElement));
+                return parent
+                    ? [[undoElement, parent[1], snapshot(undoElement)] as const]
+                    : [];
+            })
+    }
+
+    private animateTransitions(transitions: (readonly [HTMLElement, ITransition])[], durationMs: number, delayMs: number, timing: TimingFunction) {
+        return combineAnimations(
+            transitions
+                .map(([element, transition]) => {
+                    let animation = combineAnimations([
+                        animateCss(element, [transition.from, transition.to], durationMs, delayMs, timing),
+                        animateTransforms(element, transition.transforms, durationMs, delayMs, timing)
+                    ]);
+
+                    this.animations.set(element, animation);
+
+                    return animation;
+                }));
+    }
+
+    private finishPendingAnimations(animating: (readonly [HTMLElement, ...unknown[]])[]) {
+        animating.forEach(([element]) => {
+            let animation = this.animations.get(element)
+            if (animation) {
+                animation.finish();
+                this.animations.delete(element);
+            }
+        });
+    }
 }
 
 function getSnapshot(flipped: IFlippedElement) {
@@ -124,18 +165,20 @@ function getTransitions(elementsWithSnapshot: (readonly [IFlippedElement, Snapsh
     return elementsWithSnapshot.map(([flipped, previous, current]) => [flipped.element, flip(previous, current)] as const);
 }
 
-function getUndos(undoing: Set<HTMLElement>, updates: (readonly [HTMLElement, IFlip])[]) {
-    return Array.from(undoing)
-        .flatMap(element => {
-            let parent = findLast(updates, ([el]) => el.contains(element));
-            return parent
-                ? [[element, unflip(snapshot(element), parent[1])] as const]
-                : [];
-        });
+function getUndos(undoing: (readonly [HTMLElement, IFlip, Snapshot])[]) {
+    return undoing.map(([undo, parentUpdate, snapshot]) => [undo, unflip(snapshot, parentUpdate)] as const);
 }
 
 function applyEntryStyles(entering: (readonly [IFlippedElement, ...any[]])[]) {
-    entering.forEach(([added]) => Object.assign(added.element.style, added.config.entryStyles || { opacity: '0' }));
+    return entering.map(([added]) => {
+        let originalCssText = added.element.style.cssText;
+        Object.assign(added.element.style, added.config.entryStyles || { opacity: '0' });
+        return [added.element, originalCssText] as const;
+    });
+}
+
+function removeEntryStyles(entryStyleChanges: (readonly [HTMLElement, string])[]) {
+    entryStyleChanges.forEach(([element, originalCssText]) => element.style.cssText = originalCssText);
 }
 
 function applyExitStyles(exiting: (readonly [IFlippedElement, Snapshot, ...any[]])[]) {
@@ -153,16 +196,6 @@ function applyExitStyles(exiting: (readonly [IFlippedElement, Snapshot, ...any[]
         }, removed.config.exitStyles || { opacity: '0' });
         removed.offsetParent!.appendChild(removed.element);
     });
-}
-
-function animateTransitions(transitions: (readonly [HTMLElement, ITransition])[], durationMs: number, delayMs: number, timing: TimingFunction) {
-    return combineAnimations(
-        transitions
-            .map(([element, transition]) =>
-                combineAnimations([
-                    animateCss(element, [transition.from, transition.to], durationMs, delayMs, timing),
-                    animateTransforms(element, transition.transforms, durationMs, delayMs, timing)
-                ])));
 }
 
 function animateTransforms(element: HTMLElement, transforms: Interpolator<Translation | Scaling>[], durationMs: number, delayMs: number, timing: TimingFunction) {

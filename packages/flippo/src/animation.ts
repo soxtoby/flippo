@@ -3,10 +3,14 @@ import bezier = require("bezier-easing");
 export type InterpolatorArray<T extends any[]> = { [K in keyof T]: Interpolator<T[K]> };
 export type InterpolatorMap<T extends object> = { [K in keyof T]: Interpolator<T[K]> };
 export type Interpolator<T> = (progress: number) => T;
-export interface Animation { play(): Promise<void>; }
 export type StyleProperty = Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule' | 'getPropertyPriority' | 'getPropertyValue' | 'item' | 'removeProperty' | 'setProperty'>;
 export type StyleValues = { [P in StyleProperty]?: CSSStyleDeclaration[P] };
 export type TimingFunction = ((progress: number) => number) & { css: string };
+
+export interface Animation {
+    play(): Promise<void>;
+    finish(): void;
+}
 
 export function interpolate(from: number, to: number): Interpolator<number> {
     return (progress: number) => from + progress * (to - from);
@@ -51,10 +55,13 @@ export function delay<T>(interpolator: Interpolator<T>, fraction: number): Inter
 }
 
 export function animate(element: HTMLElement, interpolate: Interpolator<StyleValues>, durationMs: number, delayMs: number): Animation {
+    let originalStyleCss = element.style.cssText;
     Object.assign(element.style, interpolate(0));
 
+    let nextAnimationFrame: number;
+
     return {
-        play: () => new Promise(resolve => {
+        play: () => new Promise<void>(resolve => {
             let start = performance.now();
             let totalDuration = durationMs + delayMs;
             let delayedInterpolate = delay(interpolate, delayMs / totalDuration);
@@ -67,11 +74,15 @@ export function animate(element: HTMLElement, interpolate: Interpolator<StyleVal
                 Object.assign(element.style, delayedInterpolate(progress));
 
                 if (progress < 1)
-                    requestAnimationFrame(nextFrame);
+                    nextAnimationFrame = requestAnimationFrame(nextFrame);
                 else
                     resolve();
             }
-        })
+        }),
+        finish: () => {
+            element.style.cssText = originalStyleCss;
+            cancelAnimationFrame(nextAnimationFrame);
+        }
     };
 }
 
@@ -82,13 +93,18 @@ export function animateCss(element: HTMLElement, keyframes: Keyframe[], duration
         play: () => new Promise<void>(resolve => {
             animation.addEventListener('finish', () => resolve());
             animation.play();
-        })
+        }),
+        finish: () => {
+            animation.finish();
+            animation.cancel(); // Removes fill styling
+        }
     };
 }
 
 export function combineAnimations(animations: Animation[]): Animation {
     return {
-        play: (...args: Parameters<Animation['play']>) => Promise.all(animations.map(a => a.play(...args))) as any
+        play: (...args: Parameters<Animation['play']>) => Promise.all(animations.map(a => a.play(...args))) as any,
+        finish: () => animations.forEach(a => a.finish())
     };
 }
 
