@@ -10,6 +10,15 @@ export type TimingFunction = ((progress: number) => number) & { css: string };
 export interface Animation {
     play(): Promise<void>;
     finish(): void;
+
+    /** For debugging */
+    element?: HTMLElement;
+    /** For debugging */
+    keyframes?: Keyframe[];
+    /** For debugging */
+    animations?: Animation[];
+    /** For debugging */
+    readonly playState: AnimationPlayState;
 }
 
 export function interpolate(from: number, to: number): Interpolator<number> {
@@ -60,10 +69,13 @@ export function animate(element: HTMLElement, interpolate: Interpolator<StyleVal
 
     let nextAnimationFrame: number;
     let animationComplete: () => void;
+    let playState: AnimationPlayState = 'paused';
 
     return {
+        element,
         play: () => new Promise<void>(resolve => {
             animationComplete = resolve;
+            playState = 'running';
             let start = performance.now();
             let totalDuration = durationMs + delayMs;
             let delayedInterpolate = delay(interpolate, delayMs / totalDuration);
@@ -80,12 +92,13 @@ export function animate(element: HTMLElement, interpolate: Interpolator<StyleVal
                 else
                     animationComplete();
             }
-        }),
+        }).then(() => { playState = 'finished'; }),
         finish: () => {
             element.style.cssText = originalStyleCss;
             cancelAnimationFrame(nextAnimationFrame);
             animationComplete();
-        }
+        },
+        get playState() { return playState; }
     };
 }
 
@@ -93,6 +106,7 @@ export function animateCss(element: HTMLElement, keyframes: Keyframe[], duration
     let animation = element.animate(keyframes, { duration: durationMs, delay: delayMs, easing: timing.css, fill: 'both' });
     animation.pause();
     return {
+        element, keyframes,
         play: () => new Promise<void>(resolve => {
             animation.addEventListener('finish', () => resolve());
             animation.play();
@@ -100,14 +114,21 @@ export function animateCss(element: HTMLElement, keyframes: Keyframe[], duration
         finish: () => {
             animation.finish();
             animation.cancel(); // Removes fill styling
-        }
+        },
+        get playState() { return animation.playState; }
     };
 }
 
 export function combineAnimations(animations: Animation[]): Animation {
     return {
+        animations,
         play: (...args: Parameters<Animation['play']>) => Promise.all(animations.map(a => a.play(...args))) as any,
-        finish: () => animations.forEach(a => a.finish())
+        finish: () => animations.forEach(a => a.finish()),
+        get playState() {
+            return animations.every(a => a.playState == 'paused') ? 'paused'
+                : animations.every(a => a.playState == 'finished') ? 'finished'
+                    : 'running';
+        }
     };
 }
 
