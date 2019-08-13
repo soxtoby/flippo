@@ -59,9 +59,11 @@ export function animate(element: HTMLElement, interpolate: Interpolator<StyleVal
     Object.assign(element.style, interpolate(0));
 
     let nextAnimationFrame: number;
+    let animationComplete: () => void;
 
     return {
         play: () => new Promise<void>(resolve => {
+            animationComplete = resolve;
             let start = performance.now();
             let totalDuration = durationMs + delayMs;
             let delayedInterpolate = delay(interpolate, delayMs / totalDuration);
@@ -76,12 +78,13 @@ export function animate(element: HTMLElement, interpolate: Interpolator<StyleVal
                 if (progress < 1)
                     nextAnimationFrame = requestAnimationFrame(nextFrame);
                 else
-                    resolve();
+                    animationComplete();
             }
         }),
         finish: () => {
             element.style.cssText = originalStyleCss;
             cancelAnimationFrame(nextAnimationFrame);
+            animationComplete();
         }
     };
 }

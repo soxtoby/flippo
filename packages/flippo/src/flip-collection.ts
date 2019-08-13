@@ -52,6 +52,7 @@ export class FlipCollection {
         let updateAnimations = this.animateTransitions(updates, totalDuration, 0, timing.update);
 
         let toExit = this.getExitingElements();
+        this.finishPendingAnimations(toExit);
         applyExitStyles(toExit);
         let exits = addFlips(toExit, true);
         let exitAnimations = this.animateTransitions(exits, totalDuration * .3, 0, timing.exit);
