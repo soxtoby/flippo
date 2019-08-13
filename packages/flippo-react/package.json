@@ -1,6 +1,6 @@
 {
   "name": "flippo-react",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Flipping easy transitions in React",
   "main": "lib/index.js",
   "types": "lib/index",
@@ -20,7 +20,7 @@
     "react": ">=16.8"
   },
   "dependencies": {
-    "flippo": ">=0.1.0"
+    "flippo": ">=0.2.0"
   },
   "peerDependencies": {
     "react": ">=16.8"

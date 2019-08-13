@@ -1,7 +1,7 @@
 {
     "name": "flippo-root",
     "description": "Flipping easy transitions",
-    "version": "1",
+    "version": "1.0.0",
     "private": true,
     "author": "Simon Oxtoby",
     "homepage": "https://github.com/soxtoby/flippo",
