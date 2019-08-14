@@ -1,4 +1,4 @@
-import { interpolate, interpolateMap, Interpolator, map, StyleProperty, StyleValues } from "./animation";
+import { constantEffect, Effect, effect, IAnimationConfig, interpolate, mapEffect, StyleProperty, StyleValues } from "./animation";
 
 export interface Snapshot {
     rect: ClientRect;
@@ -21,40 +21,48 @@ export function snapshot(element: HTMLElement, extraProperties: StyleProperty[] 
 export interface ITransition {
     from: StyleValues;
     to: StyleValues;
-    transforms: Interpolator<Translation | Scaling>[];
+    transforms: Effect<Translation | Scaling>[];
 }
 
 export interface IFlip extends ITransition {
     previous: Snapshot,
     current: Snapshot,
-    translate: Interpolator<Translation>;
-    scale: Interpolator<Scaling>;
+    translate: Effect<Translation>;
+    scale: Effect<Scaling>;
 }
 
 export type Translation = { translateX: number, translateY: number };
 export type Scaling = { scaleX: number, scaleY: number };
 
-export function flip(previous: Snapshot, current: Snapshot, parentFlip?: IFlip): IFlip {
-    let undoParentTransforms = [] as Interpolator<Translation | Scaling>[];
+export function flip(previous: Snapshot, current: Snapshot, animationConfig: IAnimationConfig, parentFlip?: IFlip): IFlip {
+    let undoParentTransforms = [] as Effect<Translation | Scaling>[];
     if (parentFlip) {
         let offsetX = parentFlip.current.rect.left - current.rect.left;
         let offsetY = parentFlip.current.rect.top - current.rect.top;
 
-        let shiftToParentOrigin = interpolateMap({ translateX: interpolate(offsetX, 0), translateY: interpolate(offsetY, 0) });
-        let undoParentScale = map(parentFlip.scale, reverseScaling);
-        let undoParentTranslate = map(parentFlip.translate, reverseTranslation);
-        let shiftToChildOrigin = map(shiftToParentOrigin, reverseTranslation);
+        let shiftToParentOrigin = constantEffect({ translateX: offsetX, translateY: offsetY });
+        let undoParentScale = mapEffect(parentFlip.scale, reverseScaling);
+        let undoParentTranslate = mapEffect(parentFlip.translate, reverseTranslation);
+        let shiftToChildOrigin = mapEffect(shiftToParentOrigin, reverseTranslation);
 
         undoParentTransforms.push(shiftToParentOrigin, undoParentScale, undoParentTranslate, shiftToChildOrigin);
     }
 
     let scaleX = previous.rect.width / current.rect.width;
     let scaleY = previous.rect.height / current.rect.height;
-    let scale = interpolateMap({ scaleX: interpolate(scaleX, 1), scaleY: interpolate(scaleY, 1) });
+    let scale = effect(
+        interpolate({ scaleX, scaleY }, { scaleX: 1, scaleY: 1 }),
+        animationConfig.durationMs,
+        animationConfig.delayMs,
+        animationConfig.timing);
 
     let translateX = previous.rect.left - current.rect.left;
     let translateY = previous.rect.top - current.rect.top;
-    let translate = interpolateMap({ translateX: interpolate(translateX, 0), translateY: interpolate(translateY, 0) });
+    let translate = effect(
+        interpolate({ translateX, translateY }, { translateX: 0, translateY: 0 }),
+        animationConfig.durationMs,
+        animationConfig.delayMs,
+        animationConfig.timing);
 
     return {
         previous, current,

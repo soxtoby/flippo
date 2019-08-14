@@ -1,11 +1,62 @@
 import bezier = require("bezier-easing");
 
-export type InterpolatorArray<T extends any[]> = { [K in keyof T]: Interpolator<T[K]> };
-export type InterpolatorMap<T extends object> = { [K in keyof T]: Interpolator<T[K]> };
-export type Interpolator<T> = (progress: number) => T;
+export type Effect<T> = (progress: { elapsedMs: number }) => { value: T, done: boolean };
+export type EffectsArray<Array extends any[]> = { [I in keyof Array]: Effect<Array[I]> };
+
+export type Interpolator<T> = (fraction: number) => T;
+export type TimingFunction = Interpolator<number> & { css: string };
+
 export type StyleProperty = Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule' | 'getPropertyPriority' | 'getPropertyValue' | 'item' | 'removeProperty' | 'setProperty'>;
 export type StyleValues = { [P in StyleProperty]?: CSSStyleDeclaration[P] };
-export type TimingFunction = ((progress: number) => number) & { css: string };
+
+export interface IAnimationConfig {
+    durationMs: number;
+    delayMs: number;
+    timing: TimingFunction;
+}
+
+export function effect<Value>(interpolate: Interpolator<Value>, durationMs: number, delayMs: number, timing: TimingFunction): Effect<Value> {
+    return function getEffect({ elapsedMs }) {
+        if (elapsedMs < delayMs)
+            return { value: interpolate(0), done: false };
+        if (elapsedMs < delayMs + durationMs)
+            return { value: interpolate(timing((elapsedMs - delayMs) / durationMs)), done: false };
+        return { value: interpolate(1), done: true };
+    }
+}
+
+export function constantEffect<T>(value: T): Effect<T> {
+    let result = { value, done: true };
+    return function constant() { return result };
+}
+
+export function combineEffects<Values extends any[]>(effects: EffectsArray<Values>): Effect<Values> {
+    return function combinedEffects(elapsedMs) {
+        let results = effects.map(e => e(elapsedMs));
+        return {
+            value: results.map(r => r.value) as Values,
+            done: results.every(r => r.done)
+        };
+    };
+}
+
+export function mapEffect<A, B>(effect: Effect<A>, map: (value: A) => B): Effect<B> {
+    return function mappedEffect(elapsed) {
+        let { value, done } = effect(elapsed);
+        return { value: map(value), done };
+    };
+}
+
+export function interpolate<O extends Record<string, number>>(from: O, to: O): Interpolator<O> {
+    let keys = Object.keys(to) as (keyof O)[];
+
+    return function interpolated(fraction) {
+        let values = {} as O;
+        for (let key of keys)
+            values[key] = from[key] + fraction * (to[key] - from[key]) as O[keyof O];
+        return values;
+    }
+}
 
 export interface Animation {
     play(): Promise<void>;
@@ -21,51 +72,9 @@ export interface Animation {
     readonly playState: AnimationPlayState;
 }
 
-export function interpolate(from: number, to: number): Interpolator<number> {
-    return (progress: number) => from + progress * (to - from);
-}
-
-export function applyTiming<T>(interpolator: Interpolator<T>, timing: TimingFunction): Interpolator<T> {
-    return progress => interpolator(timing(progress));
-}
-
-export function interpolateMap<T extends object>(interpolators: InterpolatorMap<T>): Interpolator<T> {
-    let values = {} as T;
-    let keys = Object.keys(interpolators) as (keyof T)[];
-    return (progress) => {
-        for (let key of keys)
-            values[key] = interpolators[key](progress);
-        return values;
-    };
-}
-
-export function interpolateArray<T extends any[]>(interpolators: InterpolatorArray<T>): Interpolator<T> {
-    let values = [] as unknown as T;
-    return (progress) => {
-        for (let i = 0; i < interpolators.length; i++)
-            values[i] = interpolators[i](progress);
-        return values;
-    };
-}
-
-export function map<A, B>(interpolator: Interpolator<A>, map: (interpolated: A) => B): Interpolator<B> {
-    return (progress: number) => {
-        const interpolated = interpolator(progress);
-        const mapped = map(interpolated);
-        return mapped;
-    };
-}
-
-export function delay<T>(interpolator: Interpolator<T>, fraction: number): Interpolator<T> {
-    return fraction
-        ? progress => interpolator(progress < fraction ? 0
-            : (progress - fraction) / (1 - fraction))
-        : interpolator;
-}
-
-export function animate(element: HTMLElement, interpolate: Interpolator<StyleValues>, durationMs: number, delayMs: number): Animation {
+export function animate(element: HTMLElement, effect: Effect<StyleValues>): Animation {
     let originalStyleCss = element.style.cssText;
-    Object.assign(element.style, interpolate(0));
+    Object.assign(element.style, effect({ elapsedMs: 0 }).value);
 
     let nextAnimationFrame: number;
     let animationComplete: () => void;
@@ -73,27 +82,30 @@ export function animate(element: HTMLElement, interpolate: Interpolator<StyleVal
 
     return {
         element,
-        play: () => new Promise<void>(resolve => {
-            animationComplete = resolve;
+        play: () => new Promise<void>(function startPlaying(resolve) {
+            animationComplete = () => {
+                playState = 'finished';
+                resolve();
+            };
             playState = 'running';
             let start = performance.now();
-            let totalDuration = durationMs + delayMs;
-            let delayedInterpolate = delay(interpolate, delayMs / totalDuration);
 
             nextFrame(start);
 
             function nextFrame(now: number) {
-                let progress = Math.min((now - start) / totalDuration, 1);
+                let elapsedMs = now - start;
 
-                Object.assign(element.style, delayedInterpolate(progress));
+                let result = effect({ elapsedMs });
 
-                if (progress < 1)
-                    nextAnimationFrame = requestAnimationFrame(nextFrame);
-                else
+                Object.assign(element.style, result.value);
+
+                if (result.done)
                     animationComplete();
+                else
+                    nextAnimationFrame = requestAnimationFrame(nextFrame);
             }
-        }).then(() => { playState = 'finished'; }),
-        finish: () => {
+        }),
+        finish() {
             element.style.cssText = originalStyleCss;
             cancelAnimationFrame(nextAnimationFrame);
             animationComplete();
@@ -122,8 +134,8 @@ export function animateCss(element: HTMLElement, keyframes: Keyframe[], duration
 export function combineAnimations(animations: Animation[]): Animation {
     return {
         animations,
-        play: (...args: Parameters<Animation['play']>) => Promise.all(animations.map(a => a.play(...args))) as any,
-        finish: () => animations.forEach(a => a.finish()),
+        play: () => Promise.all(animations.map(a => a.play())) as any,
+        finish() { animations.forEach(a => a.finish()) },
         get playState() {
             return animations.every(a => a.playState == 'paused') ? 'paused'
                 : animations.every(a => a.playState == 'finished') ? 'finished'
@@ -132,12 +144,20 @@ export function combineAnimations(animations: Animation[]): Animation {
     };
 }
 
-export const timing = {
+export const defaultTiming = {
     update: cubicBezier(.4, 0, .2, 1),
     enter: cubicBezier(0, 0, .2, 1),
     exit: cubicBezier(.4, 0, 1, 1)
 };
 
-function cubicBezier(x1: number, y1: number, x2: number, y2: number): TimingFunction {
+export const defaultTransitionDurationMs = 300;
+
+export const defaultAnimationConfigs = {
+    update: { durationMs: defaultTransitionDurationMs, delayMs: 0, timing: defaultTiming.update } as IAnimationConfig,
+    exit: { durationMs: defaultTransitionDurationMs * 0.3, delayMs: 0, timing: defaultTiming.exit } as IAnimationConfig,
+    enter: { durationMs: defaultTransitionDurationMs * 0.7, delayMs: defaultTransitionDurationMs * 0.3, timing: defaultTiming.enter } as IAnimationConfig
+};
+
+export function cubicBezier(x1: number, y1: number, x2: number, y2: number): TimingFunction {
     return Object.assign(bezier(x1, y1, x2, y2), { css: `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})` });
 }
