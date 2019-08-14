@@ -1,4 +1,5 @@
 import bezier = require("bezier-easing");
+import { queueFrame, cancelFrame } from "./raf";
 
 export type Effect<T> = (progress: { elapsedMs: number }) => { value: T, done: boolean };
 export type EffectsArray<Array extends any[]> = { [I in keyof Array]: Effect<Array[I]> };
@@ -76,7 +77,7 @@ export function animate(element: HTMLElement, effect: Effect<StyleValues>): Anim
     let originalStyleCss = element.style.cssText;
     Object.assign(element.style, effect({ elapsedMs: 0 }).value);
 
-    let nextAnimationFrame: number;
+    let nextAnimationFrame = -1;
     let animationComplete: () => void;
     let playState: AnimationPlayState = 'paused';
 
@@ -85,6 +86,7 @@ export function animate(element: HTMLElement, effect: Effect<StyleValues>): Anim
         play: () => new Promise<void>(function startPlaying(resolve) {
             animationComplete = () => {
                 playState = 'finished';
+                nextAnimationFrame = -1;
                 resolve();
             };
             playState = 'running';
@@ -102,12 +104,12 @@ export function animate(element: HTMLElement, effect: Effect<StyleValues>): Anim
                 if (result.done)
                     animationComplete();
                 else
-                    nextAnimationFrame = requestAnimationFrame(nextFrame);
+                    nextAnimationFrame = queueFrame(nextFrame);
             }
         }),
         finish() {
             element.style.cssText = originalStyleCss;
-            cancelAnimationFrame(nextAnimationFrame);
+            cancelFrame(nextAnimationFrame);
             animationComplete();
         },
         get playState() { return playState; }
