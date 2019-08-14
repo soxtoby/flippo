@@ -5,7 +5,7 @@ import "./color-list.less";
 import { colors } from "./colors";
 
 export function Colors(props: { path: string }) {
-    let [shownColors, setColors] = useState(colors);
+    let [shownColors, setColors] = useState(colors.slice());
 
     return <div className="example">
         <div className="buttons">
