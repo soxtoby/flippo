@@ -1,4 +1,5 @@
 import { constantEffect, Effect, effect, IAnimationConfig, interpolate, mapEffect, StyleProperty, StyleValues } from "./animation";
+import { pick } from "./utils";
 
 export interface Snapshot {
     rect: ClientRect;
@@ -6,15 +7,9 @@ export interface Snapshot {
 }
 
 export function snapshot(element: HTMLElement, extraProperties: StyleProperty[] = ['opacity']): Snapshot {
-    let styles = {} as StyleValues;
-    if (extraProperties.length) {
-        let elementStyles = getComputedStyle(element);
-        extraProperties.forEach(prop => styles[prop] = elementStyles[prop]);
-    }
-
     return {
         rect: element.getBoundingClientRect(),
-        styles
+        styles: pick(element.style, extraProperties)
     };
 }
 

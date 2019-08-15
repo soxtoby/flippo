@@ -1,5 +1,6 @@
 import bezier = require("bezier-easing");
-import { queueFrame, cancelFrame } from "./raf";
+import { cancelFrame, queueFrame } from "./raf";
+import { pick } from "./utils";
 
 export type Effect<T> = (progress: { elapsedMs: number }) => { value: T, done: boolean };
 export type EffectsArray<Array extends any[]> = { [I in keyof Array]: Effect<Array[I]> };
@@ -66,7 +67,9 @@ export interface Animation {
     /** For debugging */
     element?: HTMLElement;
     /** For debugging */
-    keyframes?: Keyframe[];
+    from?: StyleValues;
+    /** For debugging */
+    to?: StyleValues;
     /** For debugging */
     animations?: Animation[];
     /** For debugging */
@@ -74,25 +77,24 @@ export interface Animation {
 }
 
 export function animate(element: HTMLElement, effect: Effect<StyleValues>): Animation {
-    let originalStyleCss = element.style.cssText;
-    Object.assign(element.style, effect({ elapsedMs: 0 }).value);
+    let startingStyles = effect({ elapsedMs: 0 }).value;
+    let originalStyleValues = pick(element.style, Object.keys(startingStyles) as StyleProperty[]);
+    Object.assign(element.style, startingStyles);
 
     let nextAnimationFrame = -1;
-    let animationComplete: () => void;
+    let resolve: () => void;
+    let promise = new Promise<void>(r => resolve = r);
     let playState: AnimationPlayState = 'paused';
 
     return {
         element,
-        play: () => new Promise<void>(function startPlaying(resolve) {
-            animationComplete = () => {
-                playState = 'finished';
-                nextAnimationFrame = -1;
-                resolve();
-            };
+        play() {
             playState = 'running';
             let start = performance.now();
 
             nextFrame(start);
+
+            return promise;
 
             function nextFrame(now: number) {
                 let elapsedMs = now - start;
@@ -106,31 +108,68 @@ export function animate(element: HTMLElement, effect: Effect<StyleValues>): Anim
                 else
                     nextAnimationFrame = queueFrame(nextFrame);
             }
-        }),
+        },
         finish() {
-            element.style.cssText = originalStyleCss;
+            Object.assign(element.style, originalStyleValues);
             cancelFrame(nextAnimationFrame);
             animationComplete();
         },
         get playState() { return playState; }
     };
+
+    function animationComplete() {
+        playState = 'finished';
+        nextAnimationFrame = -1;
+        resolve();
+    };
 }
 
-export function animateCss(element: HTMLElement, keyframes: Keyframe[], durationMs: number, delayMs: number, timing: TimingFunction): Animation {
-    let animation = element.animate(keyframes, { duration: durationMs, delay: delayMs, easing: timing.css, fill: 'both' });
-    animation.pause();
+export function animateCss(element: HTMLElement, from: StyleValues, to: StyleValues, durationMs: number, delayMs: number, timing: TimingFunction): Animation {
+    let styleProperties = Object.keys(from) as StyleProperty[];
+    let originalStyleValues = pick(element.style, styleProperties.concat('transition'));
+
+    element.style.transition = 'none';
+    Object.assign(element.style, from);
+
+    let resolve: () => void;
+    let promise = new Promise<void>(r => resolve = r);
+    let playState: AnimationPlayState = 'paused';
+    let isTransitioning = false;
+
     return {
-        element, keyframes,
-        play: () => new Promise<void>(resolve => {
-            animation.addEventListener('finish', () => resolve());
-            animation.play();
-        }),
-        finish: () => {
-            animation.finish();
-            animation.cancel(); // Removes fill styling
+        element, from, to,
+        play() {
+            playState = 'running';
+            element.addEventListener('transitionstart', animationStarted);
+            element.addEventListener('transitionend', animationComplete);
+
+            element.style.transition = styleProperties
+                .map(p => `${p} ${durationMs}ms ${timing.css} ${delayMs}ms`)
+                .join(',');
+            Object.assign(element.style, to);
+
+            if (!isTransitioning) // Some style changes won't trigger transitions
+                animationComplete();
+
+            return promise;
         },
-        get playState() { return animation.playState; }
+        finish: () => {
+            Object.assign(element.style, originalStyleValues);
+            animationComplete();
+        },
+        get playState() { return playState; }
     };
+
+    function animationStarted() {
+        isTransitioning = true;
+    }
+
+    function animationComplete() {
+        playState = 'finished';
+        element.removeEventListener('transitionstart', animationStarted);
+        element.removeEventListener('transitionend', animationComplete);
+        resolve();
+    }
 }
 
 export function combineAnimations(animations: Animation[]): Animation {

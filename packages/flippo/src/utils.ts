@@ -17,3 +17,9 @@ export function findLast<T>(array: T[], predicate: (item: T) => boolean) {
             return array[i];
     }
 }
+
+export function pick<T extends any, K extends keyof T>(source: T, properties: K[]): Pick<T, K> {
+    let picked = {} as Pick<T, K>;
+    properties.forEach(prop => picked[prop] = source[prop]);
+    return picked;
+}

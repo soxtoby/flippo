@@ -114,7 +114,7 @@ export class FlipCollection {
             transitions
                 .map(({ element, transition, animationConfig }) => {
                     let animation = combineAnimations([
-                        animateCss(element, [transition.from, transition.to], animationConfig.durationMs, animationConfig.delayMs, animationConfig.timing),
+                        animateCss(element, transition.from, transition.to, animationConfig.durationMs, animationConfig.delayMs, animationConfig.timing),
                         animateTransforms(element, transition.transforms)
                     ]);
 
