@@ -12,7 +12,7 @@ export function FlipScope(props: IFlipScopeProps) {
     let flipCollection = useRef<FlipCollection>();
     flipCollection.current = flipCollection.current || new FlipCollection();
 
-    let doFlip = flipCollection.current.triggerData != props.triggerData;
+    let doFlip = flipCollection.current.shouldFlip(props.triggerData);
 
     if (doFlip)
         flipCollection.current.snapshot();

@@ -1,6 +1,6 @@
 import { animate, animateCss, combineAnimations, combineEffects, defaultAnimationConfigs, Effect, getAnimations, IAnimationConfig, mapEffect, StyleProperty, StyleValues } from "./animation";
 import { flip, IFlip, Scaling, Snapshot, snapshot, Translation } from "./flip";
-import { documentPosition, findLast, getOrAdd } from "./utils";
+import { areEquivalent, documentPosition, findLast, getOrAdd } from "./utils";
 
 export interface IFlipConfig {
     id: any;
@@ -18,9 +18,7 @@ export class FlipCollection {
     private elements = new Map<any, ITrackedElement>();
     private removedElements = new Map<any, ITrackedElement>();
     private snapshots = new Map<any, Snapshot>();
-    private _triggerData: any;
-
-    get triggerData() { return this._triggerData; }
+    private triggerData: any;
 
     addElement(element: HTMLElement, config: IFlipConfig) {
         this.elements.set(config.id, { element, config, offsetParent: element.offsetParent as HTMLElement });
@@ -37,6 +35,10 @@ export class FlipCollection {
             });
             this.elements.delete(id);
         }
+    }
+
+    shouldFlip(newTriggerData: any) {
+        return !areEquivalent(this.triggerData, newTriggerData);
     }
 
     snapshot() {
@@ -75,7 +77,7 @@ export class FlipCollection {
                 toExit.forEach(({ element }) => element.remove());
             });
 
-        this._triggerData = newTriggerData;
+        this.triggerData = newTriggerData;
         this.removedElements.clear();
         this.snapshots.clear();
     }
