@@ -1,6 +1,6 @@
-import "./basic.less";
+import { Flip, FlipScope } from "flippo-react";
 import * as React from "react";
-import { FlipScope, Flip } from "flippo-react";
+import "./basic.less";
 
 export function Basic(props: { path: string }) {
     return <>
