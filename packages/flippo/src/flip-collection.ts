@@ -152,6 +152,7 @@ function applyExitStyles(exiting: IElementToFlip[]) {
             left: (previous!.rect.left - parentRect.left) + 'px',
             width: previous!.rect.width + 'px',
             height: previous!.rect.height + 'px',
+            margin: 0,
             boxSizing: 'border-box'
         }, tracked.config.exitStyles || { opacity: '0' });
         tracked.offsetParent!.appendChild(element);
