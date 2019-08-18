@@ -3,7 +3,7 @@ import { cloneElement, ReactElement, useContext, useLayoutEffect, useRef } from 
 import { FlipContext } from "./FlipScope";
 
 export interface IFlipProps extends IFlipConfig {
-    children: ReactElement
+    children: ReactElement;
 }
 
 export function Flip(props: IFlipProps) {

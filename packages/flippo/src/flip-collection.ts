@@ -1,17 +1,23 @@
-import { animate, animateCss, combineAnimations, combineEffects, defaultAnimationConfigs, Effect, getAnimations, IAnimationConfig, mapEffect, StyleProperty, StyleValues } from "./animation";
+import { animate, animateCss, combineAnimations, combineEffects, Effect, getAnimations, IAnimationConfig, mapEffect, StyleProperty, StyleValues } from "./animation";
+import { defaults } from "./defaults";
 import { flip, IFlip, Scaling, Snapshot, snapshot, Translation } from "./flip";
 import { areEquivalent, documentPosition, findLast, getOrAdd } from "./utils";
 
-export interface IFlipConfig {
-    id: any;
-    animateProps?: StyleProperty[];
-    shouldFlip?(newTriggerData: any, oldTriggerData: any, element: HTMLElement, id: any): boolean;
-    entryStyles?: StyleValues;
-    exitStyles?: StyleValues;
+export interface IFlipAnimationConfigs {
+    enterAnimation: IAnimationConfig;
+    updateAnimation: IAnimationConfig;
+    exitAnimation: IAnimationConfig;
+}
 
-    enterAnimation?: IAnimationConfig;
-    updateAnimation?: IAnimationConfig;
-    exitAnimation?: IAnimationConfig;
+export interface IFlipConfigBase extends IFlipAnimationConfigs {
+    animateProps: StyleProperty[];
+    shouldFlip(newTriggerData: any, oldTriggerData: any, element: HTMLElement, id: any): boolean;
+    entryStyles: StyleValues;
+    exitStyles: StyleValues;
+}
+
+export interface IFlipConfig extends Partial<IFlipConfigBase> {
+    id: any;
 }
 
 export class FlipCollection {
@@ -89,18 +95,17 @@ export class FlipCollection {
                 tracked: added,
                 element: added.element,
                 current: snapshot(added.element, added.config.animateProps),
-                animationConfig: added.config.enterAnimation || defaultAnimationConfigs.enter
+                animationConfig: added.config.enterAnimation || defaults.enterAnimation
             } as IElementToFlip));
     }
 
     private getUpdatingElements(newTriggerData: any): IElementToFlip[] {
-        return this.withSnapshots(this.elements.values(), c => c.updateAnimation || defaultAnimationConfigs.update)
-            .filter(({ tracked }) => tracked.config.shouldFlip == null
-                || tracked.config.shouldFlip(newTriggerData, this.triggerData, tracked.element, tracked.config.id));
+        return this.withSnapshots(this.elements.values(), c => c.updateAnimation || defaults.updateAnimation)
+            .filter(({ tracked }) => (tracked.config.shouldFlip || defaults.shouldFlip)(newTriggerData, this.triggerData, tracked.element, tracked.config.id));
     }
 
     private getExitingElements() {
-        return this.withSnapshots(this.removedElements.values(), c => c.exitAnimation || defaultAnimationConfigs.exit);
+        return this.withSnapshots(this.removedElements.values(), c => c.exitAnimation || defaults.exitAnimation);
     }
 
     private withSnapshots(elements: Iterable<ITrackedElement>, getAnimationConfig: (config: IFlipConfig) => IAnimationConfig): IElementToFlip[] {
@@ -134,7 +139,7 @@ function addFlips(elementsToFlip: IElementToFlip[]): IFlippingElement[] {
 function applyEntryStyles(entering: IElementToFlip[]) {
     return entering.map(({ tracked, element }) => {
         let originalCssText = element.style.cssText;
-        Object.assign(element.style, tracked.config.entryStyles || { opacity: '0' });
+        Object.assign(element.style, tracked.config.entryStyles || defaults.entryStyles);
         return { element: element, originalCssText };
     });
 }
@@ -156,7 +161,7 @@ function applyExitStyles(exiting: IElementToFlip[]) {
             height: previous!.rect.height + 'px',
             margin: 0,
             boxSizing: 'border-box'
-        }, tracked.config.exitStyles || { opacity: '0' });
+        }, tracked.config.exitStyles || defaults.exitStyles);
         tracked.offsetParent!.appendChild(element);
     });
 }

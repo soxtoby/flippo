@@ -1,3 +1,3 @@
-export * from "./flip"
-export * from "./flip-collection"
-export { defaultTiming, defaultAnimationConfigs, defaultTransitionDurationMs, cubicBezier } from "./animation";
+export * from "./defaults";
+export * from "./flip";
+export * from "./flip-collection";

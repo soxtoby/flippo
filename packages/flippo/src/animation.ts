@@ -1,4 +1,3 @@
-import bezier = require("bezier-easing");
 import { cancelFrame, queueFrame } from "./raf";
 import { pick, getOrAdd } from "./utils";
 
@@ -215,22 +214,4 @@ function deregisterAnimation(element: HTMLElement, animation: Animation) {
         else
             animations.delete(element);
     }
-}
-
-export const defaultTiming = {
-    update: cubicBezier(.4, 0, .2, 1),
-    enter: cubicBezier(0, 0, .2, 1),
-    exit: cubicBezier(.4, 0, 1, 1)
-};
-
-export const defaultTransitionDurationMs = 300;
-
-export const defaultAnimationConfigs = {
-    update: { durationMs: defaultTransitionDurationMs, delayMs: 0, timing: defaultTiming.update } as IAnimationConfig,
-    exit: { durationMs: defaultTransitionDurationMs * 0.3, delayMs: 0, timing: defaultTiming.exit } as IAnimationConfig,
-    enter: { durationMs: defaultTransitionDurationMs * 0.7, delayMs: defaultTransitionDurationMs * 0.3, timing: defaultTiming.enter } as IAnimationConfig
-};
-
-export function cubicBezier(x1: number, y1: number, x2: number, y2: number): TimingFunction {
-    return Object.assign(bezier(x1, y1, x2, y2), { css: `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})` });
 }
