@@ -9,7 +9,7 @@ export interface Snapshot {
 export function snapshot(element: HTMLElement, extraProperties: StyleProperty[] = ['opacity']): Snapshot {
     return {
         rect: element.getBoundingClientRect(),
-        styles: pick(element.style, extraProperties)
+        styles: extraProperties.length ? pick(getComputedStyle(element), extraProperties) : {}
     };
 }
 

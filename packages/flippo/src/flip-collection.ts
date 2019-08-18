@@ -66,6 +66,8 @@ export class FlipCollection {
 
         let animation = animateTransitions(flipped);
 
+        flipped.forEach(f => f.element.offsetHeight); // Force style recalculation so CSS transitions are triggered correctly on play
+
         animation
             .play()
             .then(() => {
