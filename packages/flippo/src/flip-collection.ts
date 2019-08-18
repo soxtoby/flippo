@@ -1,4 +1,4 @@
-import { animate, animateCss, Animation, combineAnimations, combineEffects, defaultAnimationConfigs, Effect, IAnimationConfig, mapEffect, StyleProperty, StyleValues } from "./animation";
+import { animate, animateCss, combineAnimations, combineEffects, defaultAnimationConfigs, Effect, getAnimations, IAnimationConfig, mapEffect, StyleProperty, StyleValues } from "./animation";
 import { flip, IFlip, Scaling, Snapshot, snapshot, Translation } from "./flip";
 import { documentPosition, findLast, getOrAdd } from "./utils";
 
@@ -18,7 +18,6 @@ export class FlipCollection {
     private elements = new Map<any, ITrackedElement>();
     private removedElements = new Map<any, ITrackedElement>();
     private snapshots = new Map<any, Snapshot>();
-    private animations = new Map<HTMLElement, Animation>();
     private _triggerData: any;
 
     get triggerData() { return this._triggerData; }
@@ -55,7 +54,7 @@ export class FlipCollection {
         let toFlip = toUpdate.concat(toExit).concat(toEnter)
             .sort((a, b) => documentPosition(a.element, b.element));
 
-        this.finishPendingAnimations(toFlip);
+        finishPendingAnimations(toFlip);
         let entryStyleChanges = applyEntryStyles(toEnter);
         applyExitStyles(toExit);
 
@@ -65,10 +64,12 @@ export class FlipCollection {
 
         let flipped = addFlips(toFlip);
 
-        this.animateTransitions(flipped)
+        let animation = animateTransitions(flipped);
+
+        animation
             .play()
             .then(() => {
-                this.finishPendingAnimations(toFlip);
+                animation.finish();
                 toExit.forEach(({ element }) => element.remove());
             });
 
@@ -107,31 +108,6 @@ export class FlipCollection {
                 animationConfig: getAnimationConfig(tracked.config)
             }))
             .filter(({ previous }) => previous);
-    }
-
-    private animateTransitions(transitions: IFlippingElement[]) {
-        return combineAnimations(
-            transitions
-                .map(({ element, transition, animationConfig }) => {
-                    let animation = combineAnimations([
-                        animateCss(element, transition.from, transition.to, animationConfig.durationMs, animationConfig.delayMs, animationConfig.timing),
-                        animateTransforms(element, transition.transforms)
-                    ]);
-
-                    this.animations.set(element, animation);
-
-                    return animation;
-                }));
-    }
-
-    private finishPendingAnimations(animating: IElementToFlip[]) {
-        animating.forEach(({ element }) => {
-            let animation = this.animations.get(element)
-            if (animation) {
-                animation.finish();
-                this.animations.delete(element);
-            }
-        });
     }
 }
 
@@ -191,6 +167,15 @@ function getSnapshot(tracked: ITrackedElement) {
     return snapshot(tracked.element, tracked.config.animateProps);
 }
 
+function animateTransitions(transitions: IFlippingElement[]) {
+    return combineAnimations(
+        transitions
+            .map(({ element, transition, animationConfig }) => combineAnimations([
+                animateCss(element, transition.from, transition.to, animationConfig.durationMs, animationConfig.delayMs, animationConfig.timing),
+                animateTransforms(element, transition.transforms)
+            ])));
+}
+
 function animateTransforms(element: HTMLElement, effects: Effect<Translation | Scaling>[]) {
     let styles = mapEffect(combineEffects(effects), currentTransforms => ({
         transform: currentTransforms
@@ -199,6 +184,12 @@ function animateTransforms(element: HTMLElement, effects: Effect<Translation | S
             .join(' ')
     } as StyleValues));
     return animate(element, styles);
+}
+
+function finishPendingAnimations(animating: IElementToFlip[]) {
+    animating
+        .flatMap(({ element }) => getAnimations(element))
+        .forEach(a => a.finish());
 }
 
 const units: { [transform: string]: string } = {

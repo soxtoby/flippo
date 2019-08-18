@@ -1,6 +1,6 @@
 import bezier = require("bezier-easing");
 import { cancelFrame, queueFrame } from "./raf";
-import { pick } from "./utils";
+import { pick, getOrAdd } from "./utils";
 
 export type Effect<T> = (progress: { elapsedMs: number }) => { value: T, done: boolean };
 export type EffectsArray<Array extends any[]> = { [I in keyof Array]: Effect<Array[I]> };
@@ -85,8 +85,9 @@ export function animate(element: HTMLElement, effect: Effect<StyleValues>): Anim
     let resolve: () => void;
     let promise = new Promise<void>(r => resolve = r);
     let playState: AnimationPlayState = 'paused';
+    let finished = false;
 
-    return {
+    return registerAnimation(element, {
         element,
         play() {
             playState = 'running';
@@ -110,12 +111,16 @@ export function animate(element: HTMLElement, effect: Effect<StyleValues>): Anim
             }
         },
         finish() {
-            Object.assign(element.style, originalStyleValues);
-            cancelFrame(nextAnimationFrame);
-            animationComplete();
+            if (!finished) {
+                finished = true;
+                deregisterAnimation(element, this);
+                Object.assign(element.style, originalStyleValues);
+                cancelFrame(nextAnimationFrame);
+                animationComplete();
+            }
         },
         get playState() { return playState; }
-    };
+    });
 
     function animationComplete() {
         playState = 'finished';
@@ -135,8 +140,9 @@ export function animateCss(element: HTMLElement, from: StyleValues, to: StyleVal
     let promise = new Promise<void>(r => resolve = r);
     let playState: AnimationPlayState = 'paused';
     let isTransitioning = false;
+    let finished = false;
 
-    return {
+    return registerAnimation(element, {
         element, from, to,
         play() {
             playState = 'running';
@@ -153,12 +159,16 @@ export function animateCss(element: HTMLElement, from: StyleValues, to: StyleVal
 
             return promise;
         },
-        finish: () => {
-            Object.assign(element.style, originalStyleValues);
-            animationComplete();
+        finish() {
+            if (!finished) {
+                finished = true;
+                deregisterAnimation(element, this);
+                Object.assign(element.style, originalStyleValues);
+                animationComplete();
+            }
         },
         get playState() { return playState; }
-    };
+    });
 
     function animationStarted() {
         isTransitioning = true;
@@ -183,6 +193,28 @@ export function combineAnimations(animations: Animation[]): Animation {
                     : 'running';
         }
     };
+}
+
+let animations = new Map<HTMLElement, Animation[]>();
+
+export function getAnimations(element: HTMLElement) {
+    return animations.get(element) || [] as readonly Animation[];
+}
+
+function registerAnimation(element: HTMLElement, animation: Animation) {
+    getOrAdd(animations, element, () => []).push(animation);
+    return animation;
+}
+
+function deregisterAnimation(element: HTMLElement, animation: Animation) {
+    let elementAnimations = animations.get(element);
+    if (elementAnimations) {
+        elementAnimations = elementAnimations.filter(a => a != animation);
+        if (elementAnimations.length)
+            animations.set(element, elementAnimations);
+        else
+            animations.delete(element);
+    }
 }
 
 export const defaultTiming = {
