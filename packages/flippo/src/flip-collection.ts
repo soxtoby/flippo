@@ -27,7 +27,7 @@ export class FlipCollection {
     private triggerData: any;
 
     addElement(element: HTMLElement, config: IFlipConfig) {
-        this.elements.set(config.id, { element, config, offsetParent: element.offsetParent as HTMLElement });
+        this.elements.set(config.id, { element, config, offsetParent: (element.offsetParent ?? document.documentElement) as HTMLElement });
         this.removedElements.delete(config.id);
     }
 
