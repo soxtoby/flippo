@@ -2,7 +2,7 @@ import { constantEffect, Effect, effect, IAnimationConfig, interpolate, mapEffec
 import { pick } from "./utils";
 
 export interface Snapshot {
-    rect: ClientRect;
+    rect: DOMRect;
     styles: StyleValues;
 }
 

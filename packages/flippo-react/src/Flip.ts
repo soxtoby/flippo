@@ -17,10 +17,10 @@ export function useFlip(config: IFlipConfig) {
     let flipCollection = useContext(FlipContext);
 
     useLayoutEffect(() => {
-        flipCollection.addElement(ref.current!, config);
+        flipCollection.mount(ref.current!, config);
         let registeredId = config.id; // Make sure to remove the original id, not the current id
-        return () => flipCollection.removeElement(registeredId);
-    });
+        return () => flipCollection.unmount(registeredId, ref.current!);
+    }, [config.id]);
 
     return (e: HTMLElement) => { ref.current = e; };
 }
