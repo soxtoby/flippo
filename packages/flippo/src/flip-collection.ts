@@ -1,6 +1,6 @@
-import { animate, animateCss, Animation, combineAnimations, combineEffects, Effect, IAnimationConfig, mapEffect, StyleProperty, StyleValues } from "./animation";
+import { IAnimationConfig, StyleProperty, StyleValues } from "./animation";
 import { defaults } from "./defaults";
-import { flip, IFlip, Scaling, Snapshot, snapshot, Translation } from "./flip";
+import { flip, FlipAnimation, Snapshot, snapshot } from "./flip";
 import { areEquivalent, documentPosition, getOrAdd } from "./utils";
 
 export interface IFlipAnimationConfigs {
@@ -53,7 +53,8 @@ export class FlipCollection {
         let toFlip = toUpdate.concat(toExit).concat(toEnter)
             .sort((a, b) => documentPosition(a.element, b.element));
 
-        finishPendingAnimations(toFlip);
+        toFlip.forEach(f => f.animation?.finish());
+
         let entryStyleChanges = applyEntryStyles(toEnter);
         applyExitStyles(toExit);
 
@@ -63,35 +64,22 @@ export class FlipCollection {
 
         toEnter.forEach(i => i.snapshot());
 
-        this.addFlips(toFlip);
-
-        let animation = animateTransitions(toFlip);
+        toFlip.forEach(f => f.parent ??= Array.from(this.items.values()).findLast(other => other != f && other.element.contains(f.element)));
+        toFlip.forEach(f => f.animation = flip(f.element, f.previous!, f.current!, f.animationConfig, f.parent));
 
         toFlip.forEach(f => f.element.offsetHeight); // Force style recalculation so CSS transitions are triggered correctly on play
 
-        animation
-            .play()
-            .then(() => {
-                animation.finish();
-                toEnter.forEach(item => item.state = 'updating');
-                toExit.forEach(({ element }) => element.remove());
-            });
+        toFlip.forEach(f => f.animation!.play());
+
+        toEnter.forEach(f => f.animation!.finished.then(() => f.state = 'updating'));
+        toExit.forEach(f => f.animation!.finished.then(() => f.element.remove()));
 
         this.triggerData = newTriggerData;
-        Array.from(this.items)
-            .filter(([_, e]) => e.state == 'exiting')
-            .forEach(([id]) => this.items.delete(id));
-    }
-
-    private addFlips(items: TrackedItem[]) {
-        items.forEach(item => {
-            item.parent ??= Array.from(this.items.values()).findLast(other => other != item && other.element.contains(item.element));
-            item.transition = flip(item.previous!, item.current!, item.animationConfig, item.parent?.transition);
-        });
+        toExit.forEach(f => this.items.delete(f.id));
     }
 }
 
-class TrackedItem {
+export class TrackedItem {
     constructor(
         public element: HTMLElement,
         public config: IFlipConfig
@@ -106,8 +94,7 @@ class TrackedItem {
     offsetParent: HTMLElement;
     previous?: Snapshot;
     current?: Snapshot;
-    transition?: IFlip;
-    animation?: Animation;
+    animation?: FlipAnimation;
     parent?: TrackedItem;
 
     mount(element: HTMLElement, config: IFlipConfig) {
@@ -176,31 +163,4 @@ function applyExitStyles(exiting: TrackedItem[]) {
         flip.offsetParent!.appendChild(flip.element);
         delete flip.parent;
     });
-}
-
-function animateTransitions(items: TrackedItem[]) {
-    return combineAnimations(
-        items.map(item => item.animation = combineAnimations([
-            animateCss(item.element, item.transition!.from, item.transition!.to, item.animationConfig.durationMs, item.animationConfig.delayMs, item.animationConfig.timing),
-            animateTransforms(item.element, item.transition!.transforms)
-        ])));
-}
-
-function animateTransforms(element: HTMLElement, effects: Effect<Translation | Scaling>[]) {
-    let styles = mapEffect(combineEffects(effects), currentTransforms => ({
-        transform: currentTransforms
-            .flatMap(t => Object.entries(t))
-            .map(([transform, value]) => `${transform}(${value}${units[transform] || ''})`)
-            .join(' ')
-    } as StyleValues));
-    return animate(element, styles);
-}
-
-function finishPendingAnimations(animating: TrackedItem[]) {
-    animating.forEach(a => a.animation?.finish());
-}
-
-const units: { [transform: string]: string } = {
-    translateX: 'px',
-    translateY: 'px'
 }
