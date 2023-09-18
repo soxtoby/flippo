@@ -1,5 +1,5 @@
 import { FlipCollection } from "flippo";
-import { createContext, createElement, ReactNode, useLayoutEffect, useRef } from "react";
+import { createContext, createElement, ReactNode, useContext, useLayoutEffect, useRef } from "react";
 
 export const FlipContext = createContext(null as any as FlipCollection);
 
@@ -9,8 +9,10 @@ export interface IFlipScopeProps {
 }
 
 export function FlipScope(props: IFlipScopeProps) {
+    let outerContext = useContext(FlipContext);
+
     let flipCollection = useRef<FlipCollection>();
-    flipCollection.current = flipCollection.current || new FlipCollection();
+    flipCollection.current = flipCollection.current || new FlipCollection(outerContext);
 
     let doFlip = flipCollection.current.shouldFlip(props.triggerData);
 

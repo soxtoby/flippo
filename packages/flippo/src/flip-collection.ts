@@ -24,6 +24,8 @@ export class FlipCollection {
     private items = new Map<any, TrackedItem>();
     private triggerData: any;
 
+    constructor(private _parent?: FlipCollection) { }
+
     mount(element: HTMLElement, config: IFlipConfig) {
         let tracked = this.items.get(config.id);
         if (tracked)
@@ -64,7 +66,7 @@ export class FlipCollection {
 
         toEnter.forEach(i => i.snapshot());
 
-        toFlip.forEach(f => f.parent ??= Array.from(this.items.values()).findLast(other => other != f && other.element.contains(f.element)));
+        toFlip.forEach(f => f.parent ??= this.findParent(f.element) ?? this._parent?.findParent(f.element));
         toFlip.forEach(f => f.animation = flip(f.element, f.previous!, f.current!, f.animationConfig, f.parent));
 
         toFlip.forEach(f => f.element.offsetHeight); // Force style recalculation so CSS transitions are triggered correctly on play
@@ -76,6 +78,11 @@ export class FlipCollection {
 
         this.triggerData = newTriggerData;
         toExit.forEach(f => this.items.delete(f.id));
+    }
+
+    private findParent(element: HTMLElement) {
+        return Array.from(this.items.values())
+            .findLast(other => other.element != element && other.element.contains(element));
     }
 }
 
