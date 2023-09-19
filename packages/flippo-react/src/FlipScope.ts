@@ -4,7 +4,7 @@ import { createContext, createElement, ReactNode, useContext, useLayoutEffect, u
 export const FlipContext = createContext(null as any as FlipCollection);
 
 export interface IFlipScopeProps {
-    triggerData: any;
+    triggerData?: any;
     children: ReactNode;
 }
 

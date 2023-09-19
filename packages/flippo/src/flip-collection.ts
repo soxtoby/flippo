@@ -35,7 +35,8 @@ export class FlipCollection {
     }
 
     shouldFlip(newTriggerData: any) {
-        return !areEquivalent(this.triggerData, newTriggerData);
+        return newTriggerData === undefined
+            || !areEquivalent(this.triggerData, newTriggerData);
     }
 
     snapshot() {
