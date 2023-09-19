@@ -1,6 +1,6 @@
 import bezier = require("bezier-easing");
 import { TimingFunction } from "./animation";
-import { IFlipAnimationConfigs, IFlipConfigBase } from "./flip-collection";
+import { IFlipAnimationConfigs, IFlipConfig } from "./flip-collection";
 
 export const defaultTiming = {
     get update() { return cubicBezier(.4, 0, .2, 1); },
@@ -8,7 +8,7 @@ export const defaultTiming = {
     get exit() { return cubicBezier(.4, 0, 1, 1); }
 };
 
-export const defaults: IFlipConfigBase = {
+export const defaults: IFlipConfig = {
     animateProps: ['opacity', 'backgroundColor'],
     shouldFlip: () => true,
     entryStyles: { opacity: '0' },

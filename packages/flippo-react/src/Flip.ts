@@ -1,27 +1,29 @@
 import { IFlipConfig } from "flippo";
-import { cloneElement, ReactElement, useContext, useLayoutEffect, useRef } from "react";
+import { cloneElement, ReactElement, useContext, useId, useLayoutEffect, useRef } from "react";
 import { FlipContext } from "./FlipScope";
 
-export interface IFlipProps extends IFlipConfig {
+export interface IFlipProps extends Partial<IFlipConfig> {
+    id?: any;
     children: ReactElement;
 }
 
 export function Flip(props: IFlipProps) {
-    let { children, ...config } = props;
-    let ref = useFlip(config);
+    let { id, children, ...config } = props;
+    let ref = useFlip(config, id);
     return cloneElement(children, { ref });
 }
 
-export function useFlip(config: IFlipConfig) {
+export function useFlip(config: Partial<IFlipConfig>, id?: any) {
     let ref = useRef<HTMLElement>();
     let flipCollection = useContext(FlipContext);
 
+    id ??= useId();
+
     useLayoutEffect(() => {
-        let id = config.id;
         let element = ref.current!;
-        flipCollection.mount(element, config);
+        flipCollection.mount(id, element, config);
         return () => flipCollection.unmount(id, element);
-    }, [config.id]);
+    }, [id]);
 
     return (e: HTMLElement) => { ref.current = e; };
 }

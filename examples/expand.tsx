@@ -26,9 +26,9 @@ function ColorCard({ color, expanded, onClick }: { color: string, expanded: bool
                 </Flip>
             </div>
             {expanded && <>
-                <Flip id={color + '-detail1'}><div className="colorCard-detail"></div></Flip>
-                <Flip id={color + '-detail2'}><div className="colorCard-detail"></div></Flip>
-                <Flip id={color + '-detail3'}><div className="colorCard-detail"></div></Flip>
+                <Flip><div className="colorCard-detail"></div></Flip>
+                <Flip><div className="colorCard-detail"></div></Flip>
+                <Flip><div className="colorCard-detail"></div></Flip>
             </>}
         </div>
     </Flip>;

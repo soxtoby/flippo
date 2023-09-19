@@ -9,15 +9,11 @@ export interface IFlipAnimationConfigs {
     exitAnimation: IAnimationConfig;
 }
 
-export interface IFlipConfigBase extends IFlipAnimationConfigs {
+export interface IFlipConfig extends IFlipAnimationConfigs {
     animateProps: StyleProperty[];
     shouldFlip(newTriggerData: any, oldTriggerData: any, element: HTMLElement, id: any): boolean;
     entryStyles: StyleValues;
     exitStyles: StyleValues;
-}
-
-export interface IFlipConfig extends Partial<IFlipConfigBase> {
-    id: any;
 }
 
 export class FlipCollection {
@@ -26,12 +22,12 @@ export class FlipCollection {
 
     constructor(private _parent?: FlipCollection) { }
 
-    mount(element: HTMLElement, config: IFlipConfig) {
-        let tracked = this.items.get(config.id);
+    mount(id: unknown, element: HTMLElement, config: Partial<IFlipConfig>) {
+        let tracked = this.items.get(id);
         if (tracked)
             tracked.mount(element, config);
         else
-            this.items.set(config.id, new TrackedItem(element, config));
+            this.items.set(id, new TrackedItem(id, element, config));
     }
 
     unmount(id: any, element: HTMLElement) {
@@ -88,14 +84,13 @@ export class FlipCollection {
 
 export class TrackedItem {
     constructor(
+        public readonly id: any,
         public element: HTMLElement,
-        public config: IFlipConfig
+        public config: Partial<IFlipConfig>
     ) {
-        this.id = config.id;
         this.offsetParent = element.offsetParent as HTMLElement ?? document.documentElement;
     }
 
-    readonly id: any;
     state: FlipState = 'entering';
     offsetParent: HTMLElement;
     previous?: Snapshot;
@@ -103,7 +98,7 @@ export class TrackedItem {
     animation?: FlipAnimation;
     parent?: TrackedItem;
 
-    mount(element: HTMLElement, config: IFlipConfig) {
+    mount(element: HTMLElement, config: Partial<IFlipConfig>) {
         if (this.element != element) {
             this.element = element;
             this.offsetParent = element.offsetParent as HTMLElement ?? document.documentElement;
