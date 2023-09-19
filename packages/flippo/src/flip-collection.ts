@@ -97,7 +97,6 @@ export class TrackedItem {
 
     readonly id: any;
     state: FlipState = 'entering';
-    previousElement?: HTMLElement;
     offsetParent: HTMLElement;
     previous?: Snapshot;
     current?: Snapshot;
@@ -106,20 +105,18 @@ export class TrackedItem {
 
     mount(element: HTMLElement, config: IFlipConfig) {
         if (this.element != element) {
-            this.previousElement = this.element;
             this.element = element;
             this.offsetParent = element.offsetParent as HTMLElement ?? document.documentElement;
-            this.state == 'updating';
+            if (this.state == 'exiting')
+                this.state = 'updating'; // Removed element was replaced with a new one
         }
         this.config = config;
     }
 
     unmount(element: HTMLElement) {
-        if (this.element == element) {
+        if (this.element == element) { // May have been replaced with new element already
             this.element = element.cloneNode(true) as HTMLElement;
             this.state = 'exiting';
-        } else {
-            this.previousElement = element.cloneNode(true) as HTMLElement;
         }
     }
 

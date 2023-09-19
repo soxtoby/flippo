@@ -12,7 +12,7 @@ ReactDOM.render(
         <header>
             <img src={hippo} />
             <h3>Flippo Examples</h3>
-            <Link to="basic">Basic Example</Link>
+            <Link to="basic">Basic Examples</Link>
             <Link to="colors">2D List</Link>
             <Link to="expand">Parent/Child</Link>
         </header>
