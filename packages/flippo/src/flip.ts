@@ -78,31 +78,24 @@ export class FlipAnimation {
             easing: this.animationConfig.timing.css,
             timeline: this.animationConfig.timeline
         });
-        this._cssAnimation.commitStyles
 
-        let nextFrame = () => {
-            let elapsedMs = this._cssAnimation!.currentTime as number;
+        this.nextFrame();
+    }
 
-            let done = false;
+    private nextFrame() {
+        let elapsedMs = this._cssAnimation!.currentTime as number;
 
-            if (elapsedMs < this.animationConfig.delayMs) {
-                this.transform = this.fromTransform;
-            } else if (elapsedMs < this.animationConfig.delayMs + this.animationConfig.durationMs) {
+        if (elapsedMs < this.animationConfig.delayMs + this.animationConfig.durationMs) {
+            if (elapsedMs > this.animationConfig.delayMs) {
                 if (this.transform == this.fromTransform)
                     this.transform = {} as TransformProperties; // Make sure not to change the fromTransform object
+
                 let fraction = this.animationConfig.timing((elapsedMs - this.animationConfig.delayMs) / this.animationConfig.durationMs);
                 this.transform.scaleX = this.fromTransform.scaleX + fraction * (identityTransform.scaleX - this.fromTransform.scaleX);
                 this.transform.scaleY = this.fromTransform.scaleY + fraction * (identityTransform.scaleY - this.fromTransform.scaleY);
                 this.transform.translateX = this.fromTransform.translateX + fraction * (identityTransform.translateX - this.fromTransform.translateX);
                 this.transform.translateY = this.fromTransform.translateY + fraction * (identityTransform.translateY - this.fromTransform.translateY);
-            } else {
-                this.transform = identityTransform;
-                done = true;
-            }
 
-            if (done) {
-                this.finish();
-            } else {
                 let undoParentTransform = this.parent
                     ? [
                         `translate(${this.offsetFromParent!.x}px, ${this.offsetFromParent!.y}px)`,
@@ -115,13 +108,14 @@ export class FlipAnimation {
                     `translate(${this.transform.translateX}px, ${this.transform.translateY}px)`,
                     `scale(${this.transform.scaleX}, ${this.transform.scaleY})`
                 ].join(' ');
+
                 this.element.style.transform = undoParentTransform + ownTransform;
-
-                this._nextAnimationFrame = queueFrame(nextFrame);
             }
-        }
 
-        nextFrame();
+            this._nextAnimationFrame = queueFrame(() => this.nextFrame());
+        } else {
+            this.finish();
+        }
     }
 
     finish() {
