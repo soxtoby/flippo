@@ -7,5 +7,4 @@ export interface IAnimationConfig {
     durationMs: number;
     delayMs: number;
     timing: TimingFunction;
-    timeline?: AnimationTimeline;
 }

@@ -75,8 +75,7 @@ export class FlipAnimation {
             fill: 'both',
             delay: this.animationConfig.delayMs,
             duration: this.animationConfig.durationMs,
-            easing: this.animationConfig.timing.css,
-            timeline: this.animationConfig.timeline
+            easing: this.animationConfig.timing.css
         });
 
         this.nextFrame();
