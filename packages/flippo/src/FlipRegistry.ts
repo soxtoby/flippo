@@ -5,20 +5,20 @@ import { getOrAdd } from "./Utils";
 
 let isFlipPending = false;
 
-const nodesById = new Map<any, FlipNode>();
+const nodesById = new Map<string, FlipNode>();
 
-export function register(id: any, config: Partial<IFlipConfig> = {}, parent?: FlipNode) {
+export function register(id: string, config: Partial<IFlipConfig> = {}, parent?: FlipNode) {
     let node = getOrAdd(nodesById, id, () => new FlipNode(id, config, parent));
     node.config = config;
     node.parent = parent;
     return node;
 }
 
-export function mount(id: any, element: HTMLElement) {
+export function mount(id: string, element: HTMLElement) {
     nodesById.get(id)?.mount(element);
 }
 
-export function unmount(id: any, element: HTMLElement) {
+export function unmount(id: string, element: HTMLElement) {
     nodesById.get(id)?.unmount(element);
 }
 

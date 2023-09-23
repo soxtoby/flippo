@@ -5,7 +5,7 @@ import { queueFlip } from "./FlipRegistry";
 
 export class FlipNode {
     constructor(
-        public readonly id: any,
+        public readonly id: string,
         public config: Partial<IFlipConfig> = {},
         public parent?: FlipNode
     ) { }

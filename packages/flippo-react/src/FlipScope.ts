@@ -1,17 +1,31 @@
 import { FlipNode } from "flippo";
-import { createContext, createElement, ReactNode, useRef } from "react";
+import { createContext, createElement, ReactNode, useContext, useMemo, useRef } from "react";
 
 export interface IFlipScopeProps {
+    id?: string;
     children: ReactNode;
     disconnect?: boolean;
 }
 
 export function FlipScope(props: IFlipScopeProps) {
-    let flipCollection = useRef<Set<FlipNode> | undefined>(props.disconnect ? undefined : new Set());
+    let parent = useFlipScopeContext();
 
-    return createElement(FlipScopeContext.Provider, {
-        value: flipCollection.current
-    }, props.children);
+    let id = parent.id && props.id
+        ? parent.id + ':' + props.id
+        : props.id || parent.id;
+
+    let value = useMemo<IFlipScopeContext>(() => ({ id, nodes: props.disconnect ? undefined : new Set() }), [id, props.disconnect]);
+
+    return createElement(FlipScopeContext.Provider, { value }, props.children);
 }
 
-export const FlipScopeContext = createContext(undefined as Set<FlipNode> | undefined);
+export function useFlipScopeContext() {
+    return useContext(FlipScopeContext);
+}
+
+const FlipScopeContext = createContext<IFlipScopeContext>({ id: '' });
+
+export interface IFlipScopeContext {
+    id: string;
+    nodes?: Set<FlipNode>;
+}
