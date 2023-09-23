@@ -13,11 +13,9 @@ export function Colors(props: { path: string }) {
             <button onClick={() => setColors(randomOrder(shownColors))}>Reorder</button>
         </div>
         <div className="colorList">
-            <FlipScope triggerData={shownColors}>
-                {shownColors.map(color => <Color color={color} key={color} />)}
-            </FlipScope>
+            {shownColors.map(color => <Color color={color} key={color} />)}
         </div>
-    </div>;
+    </div>
 }
 
 function randomColors() {
@@ -32,7 +30,7 @@ function randomOrder(source: string[]) {
 }
 
 function Color({ color }: { color: string }) {
-    return <Flip id={color}>
+    return <Flip>
         <div className="color">
             <div className="color-swatch" style={{ color }}></div>
             <div className="color-name">{color}</div>

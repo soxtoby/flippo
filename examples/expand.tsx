@@ -1,22 +1,49 @@
 import { Flip, FlipScope } from "flippo-react";
 import * as React from "react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { colors } from "./colors";
 import "./expand.less";
 
 export function Expand(props: { path: string }) {
-    let [expandedIndex, setExpandedIndex] = useState(0);
+    let [singleExpansion, setSingleExpansion] = useState(true);
+    let [expandedColor, setExpandedColor] = useState(colors[0]);
 
     let items = colors.slice(0, 5);
 
-    return <FlipScope triggerData={expandedIndex}>
-        {items.map((color, i) => <ColorCard key={color} color={color} expanded={expandedIndex == i} onClick={() => setExpandedIndex(i)} />)}
-    </FlipScope>
+    return <div>
+        <label>
+            <input type="checkbox" checked={singleExpansion} onChange={e => setSingleExpansion(e.target.checked)} /> Single expansion
+        </label>
+        <FlipScope>
+            {items.map(color =>
+                <ColorCard
+                    key={color}
+                    color={color}
+                    singleExpansion={singleExpansion}
+                    isExpandedColor={expandedColor == color}
+                    setExpandedColor={setExpandedColor}
+                />
+            )}
+        </FlipScope>
+    </div>
 }
 
-function ColorCard({ color, expanded, onClick }: { color: string, expanded: boolean, onClick: () => void }) {
+interface ColorCardProps {
+    color: string;
+    singleExpansion: boolean;
+    isExpandedColor: boolean;
+    setExpandedColor: (color: string) => void;
+}
+
+const ColorCard = memo(function ColorCard({ color, singleExpansion, isExpandedColor, setExpandedColor }: ColorCardProps) {
+    let [selfExpanded, setSelfExpanded] = useState(false);
+
+    let expanded = singleExpansion
+        ? isExpandedColor
+        : selfExpanded;
+
     return <Flip id={color}>
-        <div className={expanded ? 'colorCard is-colorCard-expanded' : 'colorCard'} onClick={onClick}>
+        <div className={expanded ? 'colorCard is-colorCard-expanded' : 'colorCard'} onClick={expandCollapse}>
             <div className="colorCard-header">
                 <Flip id={color + '-swatch'}>
                     <div className="colorCard-swatch" style={{ color }}></div>
@@ -32,4 +59,11 @@ function ColorCard({ color, expanded, onClick }: { color: string, expanded: bool
             </>}
         </div>
     </Flip>;
-}
+
+    function expandCollapse() {
+        if (singleExpansion)
+            setExpandedColor(color);
+        else
+            setSelfExpanded(e => !e);
+    }
+});

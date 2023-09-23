@@ -3,7 +3,8 @@ Flipping easy transitions.
 
 Uses the [FLIP](https://aerotwist.com/blog/flip-your-animations/) technique to transition elements from one state to another.
 
-⚠ Flippo is still very much a work-in-progress. Expect the API to change.
+> **Warning**
+> Flippo is still very much a work-in-progress. Expect the API to change.
 
 ## Getting Started with React
 Install with yarn or NPM:
@@ -16,13 +17,16 @@ npm install --save flippo-react
 
 Import `flippo-react`:
 ```tsx
-import { FlipScope, Flip } from "flippo-react";
+import { Flip } from "flippo-react";
 ```
 
 Wrap elements you want to transition in the `Flip` component:
 ```tsx
-<Flip id="box"><div className="box"></div></Flip>
+<Flip><div className="box"></div></Flip>
 ```
+
+> **Note**
+> Flipped elements must forward their `ref` to an element.
 
 To transition from one element to a another element, give them the same id:
 ```tsx
@@ -31,20 +35,29 @@ showLarge
     : <Flip id="box"><div className="small"></div></Flip>
 ```
 
-Wrap all of the `Flip`'d elements in the `FlipScope` component. All of the elements in a `FlipScope` will transition when the `FlipScope`'s `triggerData` changes.
-
+If one element affects the layout of other elements without them re-rendering (e.g. they're in separate memoized components), you can wrap them in a `FlipScope` to animate everything in the scope together:
 ```tsx
-function FlippingDemo() {
-    let [showLarge, setShowLarge] = React.useState(false);
+import { Flip, FlipScope } from "flippo-react";
+import { memo } from "react";
 
-    return <FlipScope triggerData={showLarge}>
-        <button onClick={() => setShowLarge(large => !large)}>Toggle size</button>
-        {showLarge
-            ? <Flip id="box"><div className="large"></div></Flip>
-            : <Flip id="box"><div className="small"></div></Flip>
-        }
-    </FlipScope>;
+function Accordion() {
+    return <FlipScope>
+        <AccordionSection title="One" />
+        <AccordionSection title="Two" />
+        <AccordionSection title="Three" />
+    </FlipScope>
 }
+
+const AccordionSection = memo(({ title }: { title: string; }) => {
+    let [expanded, setExpanded] = useState(false);
+
+    return <Flip>
+        <div className={expanded ? 'expanded' : 'collapsed'}>
+        <span onClick={() => setExpanded(e => !e)}>
+            {title}
+        </span>
+    </Flip>
+});
 ```
 
 ## Running the Examples

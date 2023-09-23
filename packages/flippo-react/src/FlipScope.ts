@@ -1,34 +1,17 @@
 import { FlipNode } from "flippo";
 import { createContext, createElement, ReactNode, useRef } from "react";
-import { areEquivalent } from "./Utils";
 
 export interface IFlipScopeProps {
-    triggerData?: any;
     children: ReactNode;
+    disconnect?: boolean;
 }
 
 export function FlipScope(props: IFlipScopeProps) {
-    let flipCollection = useRef<FlipScopeCollection>({ triggerData: undefined, nodes: new Set() });
-
-    let doFlip = props.triggerData === undefined
-        || !areEquivalent(flipCollection.current.triggerData, props.triggerData);
-
-    flipCollection.current.triggerData = props.triggerData;
-
-    if (doFlip) {
-        for (let node of flipCollection.current.nodes)
-            node.flip();
-    }
+    let flipCollection = useRef<Set<FlipNode> | undefined>(props.disconnect ? undefined : new Set());
 
     return createElement(FlipScopeContext.Provider, {
-        value: flipCollection.current,
-        children: props.children
-    });
+        value: flipCollection.current
+    }, props.children);
 }
 
-export type FlipScopeCollection = {
-    triggerData: any;
-    nodes: Set<FlipNode>;
-}
-
-export const FlipScopeContext = createContext<FlipScopeCollection>({ triggerData: undefined, nodes: new Set() });
+export const FlipScopeContext = createContext(undefined as Set<FlipNode> | undefined);
