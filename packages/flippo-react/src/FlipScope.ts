@@ -1,7 +1,6 @@
-import { FlipCollection } from "flippo";
-import { createContext, createElement, ReactNode, useContext, useLayoutEffect, useRef } from "react";
-
-export const FlipContext = createContext(null as any as FlipCollection);
+import { FlipNode } from "flippo";
+import { createContext, createElement, ReactNode, useRef } from "react";
+import { areEquivalent } from "./Utils";
 
 export interface IFlipScopeProps {
     triggerData?: any;
@@ -9,23 +8,27 @@ export interface IFlipScopeProps {
 }
 
 export function FlipScope(props: IFlipScopeProps) {
-    let outerContext = useContext(FlipContext);
+    let flipCollection = useRef<FlipScopeCollection>({ triggerData: undefined, nodes: new Set() });
 
-    let flipCollection = useRef<FlipCollection>();
-    flipCollection.current = flipCollection.current || new FlipCollection(outerContext);
+    let doFlip = props.triggerData === undefined
+        || !areEquivalent(flipCollection.current.triggerData, props.triggerData);
 
-    let doFlip = flipCollection.current.shouldFlip(props.triggerData);
+    flipCollection.current.triggerData = props.triggerData;
 
-    if (doFlip)
-        flipCollection.current.snapshot();
+    if (doFlip) {
+        for (let node of flipCollection.current.nodes)
+            node.flip();
+    }
 
-    useLayoutEffect(() => {
-        if (doFlip)
-            flipCollection.current!.flip(props.triggerData);
-    });
-
-    return createElement(FlipContext.Provider, {
-        value: flipCollection.current!,
+    return createElement(FlipScopeContext.Provider, {
+        value: flipCollection.current,
         children: props.children
     });
 }
+
+export type FlipScopeCollection = {
+    triggerData: any;
+    nodes: Set<FlipNode>;
+}
+
+export const FlipScopeContext = createContext<FlipScopeCollection>({ triggerData: undefined, nodes: new Set() });

@@ -1,45 +1,26 @@
-import { IAnimationConfig, StyleProperty, StyleValues } from "./animation";
-import { TrackedItem } from "./flip-collection";
-import { cancelFrame, queueFrame } from "./raf";
-import { pick } from "./utils";
+import { cancelFrame, queueFrame } from "./FrameQueue";
 
-export interface Snapshot {
-    rect: DOMRect;
-    styles: StyleValues;
+export type TimingFunction = ((fraction: number) => number) & { css: string };
+export type StyleProperty = Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule' | 'getPropertyPriority' | 'getPropertyValue' | 'item' | 'removeProperty' | 'setProperty'>;
+export type StyleValues = { [P in StyleProperty]?: CSSStyleDeclaration[P] };
+
+export interface IAnimationConfig {
+    durationMs: number;
+    delayMs: number;
+    timing: TimingFunction;
 }
 
-export function snapshot(element: HTMLElement, extraProperties: StyleProperty[] = ['opacity']): Snapshot {
-    return {
-        rect: element.getBoundingClientRect(),
-        styles: extraProperties.length ? pick(getComputedStyle(element), extraProperties) : {}
-    };
+export interface IFlipAnimationConfigs {
+    enterAnimation: IAnimationConfig;
+    updateAnimation: IAnimationConfig;
+    exitAnimation: IAnimationConfig;
 }
 
-export type Translation = { translateX: number, translateY: number };
-export type Scaling = { scaleX: number, scaleY: number };
-
-export function flip(element: HTMLElement, previous: Snapshot, current: Snapshot, animationConfig: IAnimationConfig, parent?: TrackedItem): FlipAnimation {
-    let scaleX = previous.rect.width / current.rect.width;
-    let scaleY = previous.rect.height / current.rect.height;
-    let translateX = previous.rect.left - current.rect.left;
-    let translateY = previous.rect.top - current.rect.top;
-
-    return new FlipAnimation(
-        element,
-        { scaleX, scaleY, translateX, translateY },
-        previous.styles as Keyframe,
-        current.styles as Keyframe,
-        animationConfig,
-        parent?.animation,
-        parent && { x: parent.current!.rect.left - current.rect.left, y: parent.current!.rect.top - current.rect.top }
-    );
-}
-
-interface TransformProperties {
-    scaleX: number;
-    scaleY: number;
-    translateX: number;
-    translateY: number;
+export interface IFlipConfig extends IFlipAnimationConfigs {
+    animateProps: StyleProperty[];
+    shouldFlip(newTriggerData: any, oldTriggerData: any, element: HTMLElement, id: any): boolean;
+    entryStyles: StyleValues;
+    exitStyles: StyleValues;
 }
 
 export class FlipAnimation {
@@ -85,7 +66,7 @@ export class FlipAnimation {
         let elapsedMs = this._cssAnimation!.currentTime as number;
 
         if (elapsedMs < this.animationConfig.delayMs + this.animationConfig.durationMs) {
-            if (elapsedMs > this.animationConfig.delayMs) {
+            if (elapsedMs >= this.animationConfig.delayMs) {
                 if (this.transform == this.fromTransform)
                     this.transform = {} as TransformProperties; // Make sure not to change the fromTransform object
 
@@ -127,9 +108,16 @@ export class FlipAnimation {
     }
 }
 
+interface TransformProperties {
+    scaleX: number;
+    scaleY: number;
+    translateX: number;
+    translateY: number;
+}
+
 const identityTransform = {
     scaleX: 1,
     scaleY: 1,
     translateX: 0,
     translateY: 0
-} as const;
+} as const satisfies TransformProperties;
