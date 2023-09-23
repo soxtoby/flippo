@@ -52,7 +52,7 @@ export class FlipAnimation {
             { transformOrigin: '0 0', ...this.fromStyles },
             { transformOrigin: '0 0', ...this.toStyles }
         ], {
-            fill: 'both',
+            fill: 'backwards',
             delay: this.animationConfig.delayMs,
             duration: this.animationConfig.durationMs,
             easing: this.animationConfig.timing.css
