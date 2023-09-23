@@ -1,5 +1,5 @@
 import { FlipNode } from "flippo";
-import { createContext, createElement, ReactNode, useContext, useMemo, useRef } from "react";
+import { createContext, createElement, ReactNode, useContext, useMemo } from "react";
 
 export interface IFlipScopeProps {
     id?: string;

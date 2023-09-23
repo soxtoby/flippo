@@ -1,5 +1,4 @@
 import { Flip, FlipScope } from "flippo-react";
-import * as React from "react";
 import { memo, useState } from "react";
 import { colors } from "./colors";
 import "./expand.less";

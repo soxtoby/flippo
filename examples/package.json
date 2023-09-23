@@ -4,15 +4,17 @@
     "private": true,
     "dependencies": {
         "@reach/router": "^1.2.1",
-        "@types/reach__router": "^1.2.3",
         "flippo-react": "*",
-        "less": "^3.9.0",
-        "parcel-bundler": "*",
-        "react": ">=16.8",
-        "react-dom": ">=16.8",
-        "typescript": ">=3.3"
+        "react": ">=18",
+        "react-dom": ">=18"
     },
     "devDependencies": {
-        "@types/node": "*"
+        "@types/node": "*",
+        "@types/reach__router": "^1.2.3",
+        "@types/react": "*",
+        "@types/react-dom": "*",
+        "less": "^3.9.0",
+        "parcel-bundler": "*",
+        "typescript": ">=3.3"
     }
 }

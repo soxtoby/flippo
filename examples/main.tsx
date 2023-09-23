@@ -1,14 +1,13 @@
 import { Link, Redirect, Router } from "@reach/router";
-import * as React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { Basic } from "./basic";
 import { Colors } from "./color-list";
 import { Expand } from "./expand";
 import "./main.less";
 let hippo = require("../assets/hippo.svg");
 
-ReactDOM.render(
-    <>
+createRoot(document.getElementById('root')!)
+    .render(<>
         <header>
             <img src={hippo} />
             <h3>Flippo Examples</h3>
@@ -24,5 +23,4 @@ ReactDOM.render(
                 <Expand path="expand" />
             </Router>
         </article>
-    </>,
-    document.getElementById('root'));
+    </>);

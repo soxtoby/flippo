@@ -1,5 +1,5 @@
 import { Flip } from "flippo-react";
-import * as React from "react";
+import { ReactNode, useState } from "react";
 import "./basic.less";
 
 export function Basic(props: { path: string }) {
@@ -11,7 +11,7 @@ export function Basic(props: { path: string }) {
 }
 
 function FlippingDemo() {
-    let [showLarge, setShowLarge] = React.useState(false);
+    let [showLarge, setShowLarge] = useState(false);
 
     return <>
         <button onClick={() => setShowLarge(large => !large)}>Toggle size</button>
@@ -22,7 +22,7 @@ function FlippingDemo() {
 }
 
 function VisibilityDemo() {
-    let [visible, setVisible] = React.useState(true);
+    let [visible, setVisible] = useState(true);
 
     return <>
         <button onClick={() => setVisible(v => !v)}>Toggle visibility</button>
@@ -35,7 +35,7 @@ function VisibilityDemo() {
 }
 
 function SharedIdDemo() {
-    let [selectedIndex, setSelectedIndex] = React.useState(0);
+    let [selectedIndex, setSelectedIndex] = useState(0);
 
     return <div className="tabList">
         <Tab isSelected={selectedIndex == 0} onClick={() => setSelectedIndex(0)}>One</Tab>
@@ -44,7 +44,7 @@ function SharedIdDemo() {
     </div>
 }
 
-function Tab({ isSelected, onClick, children }: { isSelected: boolean; onClick(): void; children: React.ReactNode; }) {
+function Tab({ isSelected, onClick, children }: { isSelected: boolean; onClick(): void; children: ReactNode; }) {
     return <div className="tab">
         <button onClick={onClick}>{children}</button>
         {isSelected &&
