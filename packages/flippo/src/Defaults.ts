@@ -9,7 +9,6 @@ export const defaultTiming = {
 
 export const defaults: IFlipConfig = {
     animateProps: ['opacity', 'backgroundColor'],
-    shouldFlip: () => true,
     entryStyles: { opacity: '0' },
     exitStyles: { opacity: '0' },
     ...defaultAnimations()

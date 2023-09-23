@@ -18,7 +18,6 @@ export interface IFlipAnimationConfigs {
 
 export interface IFlipConfig extends IFlipAnimationConfigs {
     animateProps: StyleProperty[];
-    shouldFlip(newTriggerData: any, oldTriggerData: any, element: HTMLElement, id: any): boolean;
     entryStyles: StyleValues;
     exitStyles: StyleValues;
 }
