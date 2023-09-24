@@ -11,7 +11,8 @@ export function Expand(props: { path: string }) {
 
     return <div>
         <label>
-            <input type="checkbox" checked={singleExpansion} onChange={e => setSingleExpansion(e.target.checked)} /> Single expansion
+            <input type="checkbox" checked={singleExpansion} onChange={e => setSingleExpansion(e.target.checked)} /> 
+            <span>Single expansion</span>
         </label>
         <FlipScope>
             {items.map(color =>

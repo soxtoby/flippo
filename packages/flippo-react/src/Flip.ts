@@ -45,6 +45,7 @@ export function Flip(props: IFlipProps) {
 
     useLayoutEffect(() => {
         let element = elementRef.current!; // Need to unmount the same element that was mounted
+        element.dataset.flipid = id!;
         mount(id!, element);
         return () => {
             unmount(id!, element);
