@@ -1,12 +1,12 @@
 import { FlipNode, IFlipConfig, mount, register, unmount } from "flippo";
-import { ReactElement, cloneElement, createContext, createElement, useContext, useId, useLayoutEffect, useRef } from "react";
+import { ReactElement, RefCallback, cloneElement, createContext, createElement, useContext, useId, useLayoutEffect, useRef } from "react";
 import { IFlipScopeContext, useFlipScopeContext } from "./FlipScope";
 import { areEquivalent } from "./Utils";
 
 export interface IFlipProps extends Partial<IFlipConfig> {
     id?: string;
     triggerData?: any;
-    children: ReactElement;
+    children: ReactElement | ((ref: RefCallback<HTMLElement>) => ReactElement);
 }
 
 export function Flip(props: IFlipProps) {
@@ -27,7 +27,7 @@ export function Flip(props: IFlipProps) {
         scope.nodes?.add(node);
         oldScope.current = scope;
     }
-
+    
     let triggerData = useRef<unknown>();
     if (props.triggerData === undefined
         || !areEquivalent(triggerData.current, props.triggerData)
@@ -52,7 +52,11 @@ export function Flip(props: IFlipProps) {
         };
     }, [id]);
 
-    return createElement(FlipNodeContext.Provider, { value: node }, cloneElement(children, { ref: elementRef }));
+    let ref = (element: HTMLElement) => { elementRef.current = element; };
+    return createElement(FlipNodeContext.Provider, { value: node },
+        typeof children == 'function'
+            ? children(ref)
+            : cloneElement(children, { ref }));
 }
 
 const FlipNodeContext = createContext(undefined as FlipNode | undefined);
