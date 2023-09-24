@@ -35,7 +35,7 @@ showLarge
     : <Flip id="box"><div className="small"></div></Flip>
 ```
 
-If one element affects the layout of other elements without them re-rendering (e.g. they're in separate memoized components), you can wrap them in a `FlipScope` to animate everything in the scope together:
+If one element affects the layout of other elements without them re-rendering (e.g. they're in separate memoized components), you can wrap them in a `FlipScope` and add the `all` prop to animate everything in the scope together:
 ```tsx
 import { Flip, FlipScope } from "flippo-react";
 import { memo } from "react";
@@ -51,7 +51,7 @@ function Accordion() {
 const AccordionSection = memo(({ title }: { title: string; }) => {
     let [expanded, setExpanded] = useState(false);
 
-    return <Flip>
+    return <Flip all>
         <div className={expanded ? 'expanded' : 'collapsed'}>
         <span onClick={() => setExpanded(e => !e)}>
             {title}

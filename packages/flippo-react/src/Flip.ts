@@ -1,16 +1,18 @@
 import { FlipNode, IFlipConfig, mount, register, unmount } from "flippo";
-import { ReactElement, RefCallback, cloneElement, createContext, createElement, useContext, useId, useLayoutEffect, useRef } from "react";
+import { DependencyList, ReactElement, RefCallback, cloneElement, createContext, createElement, useContext, useId, useLayoutEffect, useMemo, useRef } from "react";
 import { IFlipScopeContext, useFlipScopeContext } from "./FlipScope";
-import { areEquivalent } from "./Utils";
 
 export interface IFlipProps extends Partial<IFlipConfig> {
     id?: string;
-    triggerData?: any;
+    /** Flips every node in scope when it flips itself. */
+    all?: boolean;
+    /** If specified, will only flip when deps change. */
+    deps?: DependencyList;
     children: ReactElement | ((ref: RefCallback<HTMLElement>) => ReactElement);
 }
 
 export function Flip(props: IFlipProps) {
-    let { id, children, ...config } = props;
+    let { id, all, deps, children, ...config } = props;
 
     let scope = useFlipScopeContext();
 
@@ -23,23 +25,19 @@ export function Flip(props: IFlipProps) {
 
     let oldScope = useRef<IFlipScopeContext>();
     if (scope != oldScope.current) {
-        oldScope.current?.nodes?.delete(node);
-        scope.nodes?.add(node);
+        oldScope.current?.nodes.delete(node);
+        scope.nodes.add(node);
         oldScope.current = scope;
     }
-    
-    let triggerData = useRef<unknown>();
-    if (props.triggerData === undefined
-        || !areEquivalent(triggerData.current, props.triggerData)
-    ) {
-        if (scope.nodes) {
+
+    useMemo(() => {
+        if (all) {
             for (let sibling of scope.nodes)
                 sibling.flip();
         } else {
-            node.flip();
+            node.flip()
         }
-        triggerData.current = props.triggerData;
-    }
+    }, deps); // If deps aren't specified, will flip on every render
 
     let elementRef = useRef<HTMLElement>();
 

@@ -11,10 +11,10 @@ export function Expand(props: { path: string }) {
 
     return <div>
         <label>
-            <input type="checkbox" checked={singleExpansion} onChange={e => setSingleExpansion(e.target.checked)} /> 
+            <input type="checkbox" checked={singleExpansion} onChange={e => setSingleExpansion(e.target.checked)} />
             <span>Single expansion</span>
         </label>
-        <FlipScope>
+        <FlipScope deps={[expandedColor]}>
             {items.map(color =>
                 <ColorCard
                     key={color}
@@ -42,13 +42,13 @@ const ColorCard = memo(function ColorCard({ color, singleExpansion, isExpandedCo
         ? isExpandedColor
         : selfExpanded;
 
-    return <Flip id={color}>
+    return <Flip all deps={[expanded]}>
         <div className={expanded ? 'colorCard is-colorCard-expanded' : 'colorCard'} onClick={expandCollapse}>
             <div className="colorCard-header">
-                <Flip id={color + '-swatch'}>
+                <Flip>
                     <div className="colorCard-swatch" style={{ color }}></div>
                 </Flip>
-                <Flip id={color + '-name'}>
+                <Flip>
                     <div className="colorCard-name">{color}</div>
                 </Flip>
             </div>
