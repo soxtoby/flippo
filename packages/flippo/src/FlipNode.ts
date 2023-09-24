@@ -56,8 +56,8 @@ export class FlipNode {
     prepareAnimation() {
         if (this.element) {
             let element = this.element;
-            let scaleX = this.previous!.rect.width / this.current!.rect.width;
-            let scaleY = this.previous!.rect.height / this.current!.rect.height;
+            let scaleX = this.config.positionOnly ? 1 : this.previous!.rect.width / this.current!.rect.width;
+            let scaleY = this.config.positionOnly ? 1 : this.previous!.rect.height / this.current!.rect.height;
             let translateX = this.previous!.rect.left - this.current!.rect.left;
             let translateY = this.previous!.rect.top - this.current!.rect.top;
 

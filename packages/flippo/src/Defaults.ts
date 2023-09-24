@@ -8,6 +8,7 @@ export const defaultTiming = {
 };
 
 export const defaults: IFlipConfig = {
+    positionOnly: false,
     animateProps: ['opacity', 'backgroundColor'],
     entryStyles: { opacity: '0' },
     exitStyles: { opacity: '0' },

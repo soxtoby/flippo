@@ -17,6 +17,7 @@ export interface IFlipAnimationConfigs {
 }
 
 export interface IFlipConfig extends IFlipAnimationConfigs {
+    positionOnly: boolean;
     animateProps: StyleProperty[];
     entryStyles: StyleValues;
     exitStyles: StyleValues;
@@ -77,16 +78,16 @@ export class FlipAnimation {
 
                 let undoParentTransform = this.parent
                     ? [
-                        `translate(${this.offsetFromParent!.x}px, ${this.offsetFromParent!.y}px)`,
-                        `scale(${1 / this.parent.transform.scaleX}, ${1 / this.parent.transform.scaleY})`,
-                        `translate(${-this.parent.transform.translateX}px, ${-this.parent.transform.translateY}px)`,
-                        `translate(${-this.offsetFromParent!.x}px, ${-this.offsetFromParent!.y}px)`,
-                    ].join(' ') + ' '
+                        translate(this.offsetFromParent!.x, this.offsetFromParent!.y),
+                        scale(1 / this.parent.transform.scaleX, 1 / this.parent.transform.scaleY),
+                        translate(-this.parent.transform.translateX, -this.parent.transform.translateY),
+                        translate(-this.offsetFromParent!.x, -this.offsetFromParent!.y),
+                    ].filter(Boolean).join(' ') + ' '
                     : '';
                 let ownTransform = [
-                    `translate(${this.transform.translateX}px, ${this.transform.translateY}px)`,
-                    `scale(${this.transform.scaleX}, ${this.transform.scaleY})`
-                ].join(' ');
+                    translate(this.transform.translateX, this.transform.translateY),
+                    scale(this.transform.scaleX, this.transform.scaleY),
+                ].filter(Boolean).join(' ');
 
                 this.element.style.transform = undoParentTransform + ownTransform;
             }
@@ -105,6 +106,14 @@ export class FlipAnimation {
         this._nextAnimationFrame = -1;
         this._finish();
     }
+}
+
+function translate(x: number, y: number) {
+    return x || y ? `translate(${x}px, ${y}px)` : '';
+}
+
+function scale(x: number, y: number) {
+    return x || y ? `scale(${x}, ${y})` : '';
 }
 
 interface TransformProperties {
