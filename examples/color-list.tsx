@@ -1,4 +1,4 @@
-import { Flip } from "flippo-react";
+import { Flip, FlipScope } from "flippo-react";
 import { useState } from "react";
 import "./color-list.less";
 import { colors } from "./colors";
@@ -12,7 +12,9 @@ export function Colors(props: { path: string }) {
             <button onClick={() => setColors(randomOrder(shownColors))}>Reorder</button>
         </div>
         <div className="colorList">
-            {shownColors.map(color => <Color color={color} key={color} />)}
+            <FlipScope enter={false} exit={false}>
+                {shownColors.map(color => <Color color={color} key={color} />)}
+            </FlipScope>
         </div>
     </div>
 }

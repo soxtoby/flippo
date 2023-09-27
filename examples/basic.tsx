@@ -1,13 +1,13 @@
-import { Flip } from "flippo-react";
+import { Flip, FlipScope } from "flippo-react";
 import { ReactNode, useState } from "react";
 import "./basic.less";
 
 export function Basic(props: { path: string }) {
-    return <>
+    return <FlipScope enter={false} exit={false}>
         <FlippingDemo />
         <VisibilityDemo />
         <SharedIdDemo />
-    </>;
+    </FlipScope>;
 }
 
 function FlippingDemo() {

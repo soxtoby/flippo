@@ -19,7 +19,7 @@ function Main() {
 
     return <>
         <header>
-            <img src={hippo} />
+            <img src={hippo} width={32} height={32} />
             <h3>Flippo Examples</h3>
             <Link to="basic">Basic Examples</Link>
             <Link to="colors">2D List</Link>

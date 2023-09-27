@@ -20,6 +20,11 @@ export function Flip(props: IFlipProps) {
         if (config.group)
             config.group = scope.id + ':' + config.group;
     }
+    
+    config.enter ??= scope.enter;
+    config.update ??= scope.update;
+    if (config.exit == null)
+        Object.defineProperty(config, 'exit', { get: () => scope.exit }); // Scope will only provide exit config when it's unmounting
 
     let parent = useContext(FlipNodeContext);
     let node = register(id, config, parent);
