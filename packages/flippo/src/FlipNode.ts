@@ -31,6 +31,9 @@ export class FlipNode {
         if (this.element == element) { // Don't unmount if this has been mounted to a different element
             this.element = element.cloneNode(true) as HTMLElement;
             this.state = 'exiting';
+            // Queue flip without snapshotting
+            this.isFlipPending = true;
+            queueFlip();
         }
     }
 
