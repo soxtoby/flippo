@@ -33,7 +33,7 @@ export class FlipNode {
             this.state = 'exiting';
             // Queue flip without snapshotting
             this.isFlipPending = true;
-            queueFlip();
+            queueFlip(this.config.group);
         }
     }
 
@@ -41,7 +41,7 @@ export class FlipNode {
         if (!this.isFlipPending && this.element) {
             this.isFlipPending = true;
             this.snapshot();
-            queueFlip();
+            queueFlip(this.config.group);
         }
     }
 

@@ -42,7 +42,7 @@ const ColorCard = memo(function ColorCard({ color, singleExpansion, isExpandedCo
         ? isExpandedColor
         : selfExpanded;
 
-    return <Flip scale="y" position="y" enter={false} all>
+    return <Flip scale="y" position="y" enter={false} group="colors">
         <div className={expanded ? 'colorCard is-colorCard-expanded' : 'colorCard'} onClick={expandCollapse}>
             <div className="colorCard-header">
                 <Flip scale enter={false}>

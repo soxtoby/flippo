@@ -4,15 +4,25 @@ import { FlipNode } from "./FlipNode";
 import { getOrAdd } from "./Utils";
 
 let isFlipPending = false;
+let isFlippingGroup = false;
 
 const nodesById = new Map<string, FlipNode>();
+const groups = new Map<string, Set<FlipNode>>();
 
 export function register(id: string, config: IFlipConfig = {}, parent?: FlipNode) {
     let node = getOrAdd(nodesById, id, () => new FlipNode(id, config, parent));
+
+    if (config.group != node.config.group)
+        groups.get(node.config.group!)?.delete(node);
+    if (config.group)
+        getOrAdd(groups, config.group, newGroup).add(node);
+
     node.config = config;
     node.parent = parent;
     return node;
 }
+
+function newGroup() { return new Set(); }
 
 export function mount(id: string, element: HTMLElement) {
     nodesById.get(id)?.mount(element);
@@ -26,10 +36,21 @@ export function deregister(node: FlipNode) {
     nodesById.delete(node.id);
 }
 
-export function queueFlip() {
+export function queueFlip(group?: string) {
     if (!isFlipPending) {
         isFlipPending = true;
         queueMicrotask(flip);
+    }
+
+    if (group && !isFlippingGroup) {
+        isFlippingGroup = true; // Prevent infinite recursion
+        try {
+            let nodes = groups.get(group) ?? [];
+            for (let node of nodes)
+                node.flip();
+        } finally {
+            isFlippingGroup = false;
+        }
     }
 }
 

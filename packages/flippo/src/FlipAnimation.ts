@@ -20,6 +20,8 @@ export interface IFlipAnimationConfigs {
 }
 
 export interface IFlipConfig {
+    group?: string;
+
     enter?: Partial<IAnimationConfig> | boolean;
     update?: Partial<IAnimationConfig> | boolean;
     exit?: Partial<IAnimationConfig> | boolean;

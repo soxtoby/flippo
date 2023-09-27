@@ -4,21 +4,22 @@ import { IFlipScopeContext, useFlipScopeContext } from "./FlipScope";
 
 export interface IFlipProps extends IFlipConfig {
     id?: string;
-    /** Flips every node in scope when it flips itself. */
-    all?: boolean;
     /** If specified, will only flip when deps change. */
     deps?: DependencyList;
     children: ReactElement | ((ref: RefCallback<HTMLElement>) => ReactElement);
 }
 
 export function Flip(props: IFlipProps) {
-    let { id, all, deps, children, ...config } = props;
+    let { id, deps, children, ...config } = props;
 
     let scope = useFlipScopeContext();
 
     id ??= useId();
-    if (scope.id)
+    if (scope.id) {
         id = scope.id + ':' + id;
+        if (config.group)
+            config.group = scope.id + ':' + config.group;
+    }
 
     let parent = useContext(FlipNodeContext);
     let node = register(id, config, parent);
@@ -30,14 +31,7 @@ export function Flip(props: IFlipProps) {
         oldScope.current = scope;
     }
 
-    useMemo(() => {
-        if (all) {
-            for (let sibling of scope.nodes)
-                sibling.flip();
-        } else {
-            node.flip()
-        }
-    }, deps); // If deps aren't specified, will flip on every render
+    useMemo(() => node.flip(), deps); // If deps aren't specified, will flip on every render
 
     let elementRef = useRef<HTMLElement>();
 
