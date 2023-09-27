@@ -1,5 +1,5 @@
-import { FlipNode, IAnimationConfig } from "flippo";
-import { createContext, createElement, DependencyList, ReactNode, useContext, useEffect, useLayoutEffect, useMemo } from "react";
+import { IAnimationConfig } from "flippo";
+import { ReactNode, createContext, createElement, useContext, useEffect, useLayoutEffect, useMemo } from "react";
 
 export interface IFlipScopeProps {
     id?: string;
@@ -9,24 +9,17 @@ export interface IFlipScopeProps {
     update?: Partial<IAnimationConfig> | boolean;
     /** Default exit config applied to Flip elements in scope, but only when entire FlipScope is exiting. */
     exit?: Partial<IAnimationConfig> | boolean;
-    /** If specified, will flip everything in scope when deps change. */
-    deps?: DependencyList;
     children: ReactNode;
 }
 
-export function FlipScope({ id, enter, update, exit, deps, children }: IFlipScopeProps) {
+export function FlipScope({ id, enter, update, exit, children }: IFlipScopeProps) {
     let parent = useFlipScopeContext();
 
     id = parent.id && id
         ? parent.id + ':' + id
         : id || parent.id;
 
-    let value = useMemo<IFlipScopeContext>(() => ({ id: id!, nodes: new Set(), enter, update }), [id]);
-
-    useMemo(() => {
-        for (let child of value.nodes)
-            child.flip();
-    }, deps ?? []); // If deps aren't specified, don't flip on re-render
+    let value = useMemo<IFlipScopeContext>(() => ({ id: id!, enter, update }), [id]);
 
     useEffect(() => {
         delete value.enter; // Regular enter config will be used on subsequent renders
@@ -41,11 +34,10 @@ export function useFlipScopeContext() {
     return useContext(FlipScopeContext);
 }
 
-const FlipScopeContext = createContext<IFlipScopeContext>({ id: '', nodes: new Set() });
+const FlipScopeContext = createContext<IFlipScopeContext>({ id: '' });
 
 export interface IFlipScopeContext {
     id: string;
-    nodes: Set<FlipNode>;
     enter?: Partial<IAnimationConfig> | boolean;
     update?: Partial<IAnimationConfig> | boolean;
     exit?: Partial<IAnimationConfig> | boolean;

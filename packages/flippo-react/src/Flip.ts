@@ -1,6 +1,6 @@
 import { FlipNode, IFlipConfig, mount, register, unmount } from "flippo";
 import { DependencyList, ReactElement, RefCallback, cloneElement, createContext, createElement, useContext, useId, useLayoutEffect, useMemo, useRef } from "react";
-import { IFlipScopeContext, useFlipScopeContext } from "./FlipScope";
+import { useFlipScopeContext } from "./FlipScope";
 
 export interface IFlipProps extends IFlipConfig {
     id?: string;
@@ -20,7 +20,7 @@ export function Flip(props: IFlipProps) {
         if (config.group)
             config.group = scope.id + ':' + config.group;
     }
-    
+
     config.enter ??= scope.enter;
     config.update ??= scope.update;
     if (config.exit == null)
@@ -28,13 +28,6 @@ export function Flip(props: IFlipProps) {
 
     let parent = useContext(FlipNodeContext);
     let node = register(id, config, parent);
-
-    let oldScope = useRef<IFlipScopeContext>();
-    if (scope != oldScope.current) {
-        oldScope.current?.nodes.delete(node);
-        scope.nodes.add(node);
-        oldScope.current = scope;
-    }
 
     useMemo(() => node.flip(), deps); // If deps aren't specified, will flip on every render
 
@@ -44,10 +37,7 @@ export function Flip(props: IFlipProps) {
         let element = elementRef.current!; // Need to unmount the same element that was mounted
         element.dataset.flipid = id!;
         mount(id!, element);
-        return () => {
-            unmount(id!, element);
-            scope.nodes?.delete(node);
-        };
+        return () => unmount(id!, element);
     }, [id]);
 
     let ref = (element: HTMLElement) => { elementRef.current = element; };
