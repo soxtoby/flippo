@@ -2,26 +2,33 @@ import { cancelFrame, queueFrame } from "./FrameQueue";
 
 export type TimingFunction = ((fraction: number) => number) & { css: string };
 export type StyleProperty = Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule' | 'getPropertyPriority' | 'getPropertyValue' | 'item' | 'removeProperty' | 'setProperty'>;
-export type StyleValues = { [P in StyleProperty]?: CSSStyleDeclaration[P] };
+
+/** Specify a value to animate to, or <c>true</c> to automatically transition the property. */
+export type StyleValues = { [P in StyleProperty]?: CSSStyleDeclaration[P] | true };
 
 export interface IAnimationConfig {
     durationMs: number;
     delayMs: number;
     timing: TimingFunction;
+    styles: StyleValues;
 }
 
 export interface IFlipAnimationConfigs {
-    enterAnimation: IAnimationConfig;
-    updateAnimation: IAnimationConfig;
-    exitAnimation: IAnimationConfig;
+    enter: IAnimationConfig;
+    update: IAnimationConfig;
+    exit: IAnimationConfig;
 }
 
-export interface IFlipConfig extends IFlipAnimationConfigs {
-    positionOnly: boolean;
-    animateProps: StyleProperty[];
-    entryStyles: StyleValues;
-    exitStyles: StyleValues;
+export interface IFlipConfig {
+    enter?: Partial<IAnimationConfig> | boolean;
+    update?: Partial<IAnimationConfig> | boolean;
+    exit?: Partial<IAnimationConfig> | boolean;
+
+    position?: TransformConfig;
+    scale?: TransformConfig;
 }
+
+export type TransformConfig = boolean | 'x' | 'y';
 
 export class FlipAnimation {
     private _playState: AnimationPlayState = 'idle';
@@ -33,7 +40,8 @@ export class FlipAnimation {
         public readonly fromTransform: TransformProperties,
         public readonly fromStyles: Keyframe,
         public readonly toStyles: Keyframe,
-        public readonly animationConfig: IAnimationConfig,
+        public readonly animationConfig: Partial<IAnimationConfig> | undefined,
+        public readonly defaultAnimationConfig: IAnimationConfig,
         public readonly parent?: FlipAnimation,
         public readonly offsetFromParent?: { x: number; y: number; }
     ) {
@@ -49,28 +57,31 @@ export class FlipAnimation {
 
     play() {
         this._playState = 'running';
+        let delayMs = this.animationConfig?.delayMs ?? this.defaultAnimationConfig.delayMs;
+        let durationMs = this.animationConfig?.durationMs ?? this.defaultAnimationConfig.durationMs;
+        let timing = this.animationConfig?.timing ?? this.defaultAnimationConfig.timing;
         this._cssAnimation = this.element.animate([
             { transformOrigin: '0 0', ...this.fromStyles },
             { transformOrigin: '0 0', ...this.toStyles }
         ], {
             fill: 'backwards',
-            delay: this.animationConfig.delayMs,
-            duration: this.animationConfig.durationMs,
-            easing: this.animationConfig.timing.css
+            delay: delayMs,
+            duration: durationMs,
+            easing: timing.css,
         });
 
-        this.nextFrame();
+        this.nextFrame(delayMs, durationMs, timing);
     }
 
-    private nextFrame() {
+    private nextFrame(delayMs: number, durationMs: number, timing: TimingFunction) {
         let elapsedMs = this._cssAnimation!.currentTime as number;
 
-        if (elapsedMs < this.animationConfig.delayMs + this.animationConfig.durationMs) {
-            if (elapsedMs >= this.animationConfig.delayMs) {
+        if (elapsedMs < delayMs + durationMs) {
+            if (elapsedMs >= delayMs) {
                 if (this.transform == this.fromTransform)
                     this.transform = {} as TransformProperties; // Make sure not to change the fromTransform object
 
-                let fraction = this.animationConfig.timing((elapsedMs - this.animationConfig.delayMs) / this.animationConfig.durationMs);
+                let fraction = timing((elapsedMs - delayMs) / durationMs);
                 this.transform.scaleX = this.fromTransform.scaleX + fraction * (identityTransform.scaleX - this.fromTransform.scaleX);
                 this.transform.scaleY = this.fromTransform.scaleY + fraction * (identityTransform.scaleY - this.fromTransform.scaleY);
                 this.transform.translateX = this.fromTransform.translateX + fraction * (identityTransform.translateX - this.fromTransform.translateX);
@@ -80,7 +91,10 @@ export class FlipAnimation {
                     ? [
                         translate(this.offsetFromParent!.x, this.offsetFromParent!.y),
                         scale(1 / this.parent.transform.scaleX, 1 / this.parent.transform.scaleY),
-                        translate(-this.parent.transform.translateX, -this.parent.transform.translateY),
+                        // Only undo parent translation if node is being translated itself
+                        this.fromTransform.translateX != identityTransform.translateX || this.fromTransform.translateY != identityTransform.translateY
+                            ? translate(-this.parent.transform.translateX, -this.parent.transform.translateY)
+                            : '',
                         translate(-this.offsetFromParent!.x, -this.offsetFromParent!.y),
                     ].filter(Boolean).join(' ') + ' '
                     : '';
@@ -92,7 +106,7 @@ export class FlipAnimation {
                 this.element.style.transform = undoParentTransform + ownTransform;
             }
 
-            this._nextAnimationFrame = queueFrame(() => this.nextFrame());
+            this._nextAnimationFrame = queueFrame(() => this.nextFrame(delayMs, durationMs, timing));
         } else {
             this.finish();
         }
@@ -108,12 +122,16 @@ export class FlipAnimation {
     }
 }
 
-function translate(x: number, y: number) {
-    return x || y ? `translate(${x}px, ${y}px)` : '';
+function scale(x: number, y: number) {
+    return x != identityTransform.scaleX || y != identityTransform.scaleY
+        ? `scale(${x}, ${y})`
+        : '';
 }
 
-function scale(x: number, y: number) {
-    return x || y ? `scale(${x}, ${y})` : '';
+function translate(x: number, y: number) {
+    return x != identityTransform.translateX || y != identityTransform.translateY
+        ? `translate(${x}px, ${y}px)`
+        : '';
 }
 
 interface TransformProperties {
@@ -123,7 +141,7 @@ interface TransformProperties {
     translateY: number;
 }
 
-const identityTransform = {
+export const identityTransform = {
     scaleX: 1,
     scaleY: 1,
     translateX: 0,

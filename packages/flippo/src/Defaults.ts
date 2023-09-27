@@ -1,5 +1,5 @@
 import bezier = require("bezier-easing");
-import { IFlipAnimationConfigs, IFlipConfig, TimingFunction } from "./FlipAnimation";
+import { IFlipAnimationConfigs, TimingFunction } from "./FlipAnimation";
 
 export const defaultTiming = {
     get update() { return cubicBezier(.4, 0, .2, 1); },
@@ -7,20 +7,46 @@ export const defaultTiming = {
     get exit() { return cubicBezier(.4, 0, 1, 1); }
 };
 
-export const defaults: IFlipConfig = {
-    positionOnly: false,
-    animateProps: ['opacity', 'backgroundColor'],
-    entryStyles: { opacity: '0' },
-    exitStyles: { opacity: '0' },
-    ...defaultAnimations()
+export const defaultDuration = {
+    update(totalDurationMs: number) { return totalDurationMs; },
+    enter(totalDurationMs: number) { return totalDurationMs * 0.7; },
+    exit(totalDurationMs: number) { return totalDurationMs * 0.3; }
 }
 
-export function defaultAnimations(totalTransitionDurationMs = 300): IFlipAnimationConfigs {
-    return {
-        updateAnimation: { durationMs: totalTransitionDurationMs, delayMs: 0, timing: defaultTiming.update },
-        exitAnimation: { durationMs: totalTransitionDurationMs * 0.3, delayMs: 0, timing: defaultTiming.exit },
-        enterAnimation: { durationMs: totalTransitionDurationMs * 0.7, delayMs: totalTransitionDurationMs * 0.3, timing: defaultTiming.enter }
-    };
+export const defaultDelay = {
+    update(totalDurationMs: number) { return 0; },
+    enter(totalDurationMs: number) { return totalDurationMs * 0.3; },
+    exit(totalDurationMs: number) { return 0; }
+}
+
+export const defaultDurationMs = 300;
+
+export const defaults: IFlipAnimationConfigs = {
+    enter: {
+        durationMs: defaultDuration.enter(defaultDurationMs),
+        delayMs: defaultDelay.enter(defaultDurationMs),
+        timing: defaultTiming.enter,
+        styles: {
+            opacity: '0'
+        }
+    },
+    update: {
+        durationMs: defaultDuration.update(defaultDurationMs),
+        delayMs: defaultDelay.update(defaultDurationMs),
+        timing: defaultTiming.update,
+        styles: {
+            opacity: true,
+            backgroundColor: true,
+        }
+    },
+    exit: {
+        durationMs: defaultDuration.exit(defaultDurationMs),
+        delayMs: defaultDelay.exit(defaultDurationMs),
+        timing: defaultTiming.exit,
+        styles: {
+            opacity: '0'
+        }
+    }
 }
 
 export function cubicBezier(x1: number, y1: number, x2: number, y2: number): TimingFunction {

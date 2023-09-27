@@ -15,7 +15,7 @@ function FlippingDemo() {
 
     return <>
         <button onClick={() => setShowLarge(large => !large)}>Toggle size</button>
-        <Flip>
+        <Flip scale>
             <div className={showLarge ? 'large' : 'small'}></div>
         </Flip>
     </>
@@ -48,7 +48,7 @@ function Tab({ isSelected, onClick, children }: { isSelected: boolean; onClick()
     return <div className="tab">
         <button onClick={onClick}>{children}</button>
         {isSelected &&
-            <Flip id="highlight">
+            <Flip scale="x" position="x" id="highlight">
                 <div className="tab-highlight" />
             </Flip>
         }

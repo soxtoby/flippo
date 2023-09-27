@@ -2,7 +2,7 @@ import { FlipNode, IFlipConfig, mount, register, unmount } from "flippo";
 import { DependencyList, ReactElement, RefCallback, cloneElement, createContext, createElement, useContext, useId, useLayoutEffect, useMemo, useRef } from "react";
 import { IFlipScopeContext, useFlipScopeContext } from "./FlipScope";
 
-export interface IFlipProps extends Partial<IFlipConfig> {
+export interface IFlipProps extends IFlipConfig {
     id?: string;
     /** Flips every node in scope when it flips itself. */
     all?: boolean;

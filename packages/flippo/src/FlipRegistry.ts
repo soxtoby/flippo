@@ -1,5 +1,5 @@
 import { defaults } from "./Defaults";
-import { IFlipConfig } from "./FlipAnimation";
+import { IFlipConfig, StyleValues } from "./FlipAnimation";
 import { FlipNode } from "./FlipNode";
 import { getOrAdd } from "./Utils";
 
@@ -7,7 +7,7 @@ let isFlipPending = false;
 
 const nodesById = new Map<string, FlipNode>();
 
-export function register(id: string, config: Partial<IFlipConfig> = {}, parent?: FlipNode) {
+export function register(id: string, config: IFlipConfig = {}, parent?: FlipNode) {
     let node = getOrAdd(nodesById, id, () => new FlipNode(id, config, parent));
     node.config = config;
     node.parent = parent;
@@ -39,19 +39,22 @@ function flip() {
     let toFlip = Array.from(nodesById.values()).filter(n => n.isFlipPending);
     let toEnter = toFlip.filter(n => n.state == 'entering');
     let toExit = toFlip.filter(n => n.state == 'exiting');
+    let toUpdate = toFlip.filter(n => n.state == 'updating');
 
     for (let node of toFlip) {
         node.isFlipPending = false;
         node.animation?.finish();
     }
 
-    let entryStyleChanges = applyEntryStyles(toEnter);
+    let entryStyleChanges = applyTempStyles(toEnter, n => n.enterConfig?.styles ?? defaults.enter.styles);
+    let updateStyleChanges = applyTempStyles(toUpdate, n => n.updateConfig?.styles ?? defaults.update.styles);
     applyExitStyles(toExit);
 
     for (let node of toFlip)
         node.snapshot();
 
-    removeEntryStyles(entryStyleChanges);
+    removeTempStyles(entryStyleChanges);
+    removeTempStyles(updateStyleChanges);
 
     for (let node of toEnter)
         node.snapshot();
@@ -66,17 +69,21 @@ function flip() {
         node.animation!.play();
 }
 
-function applyEntryStyles(entering: FlipNode[]) {
-    return entering.map(flip => {
+function applyTempStyles(nodes: FlipNode[], getFlipStyles: (node: FlipNode) => StyleValues) {
+    return nodes.map(flip => {
         let element = flip.element!;
         let originalCssText = element.style.cssText;
-        Object.assign(element.style, flip.config.entryStyles || defaults.entryStyles);
+        let styles = getFlipStyles(flip);
+        for (let key in styles) {
+            if (styles[key] !== true)
+                element.style[key] = styles[key] as string;
+        }
         return { element, originalCssText };
     });
 }
 
-function removeEntryStyles(entryStyleChanges: { element: HTMLElement; originalCssText: string; }[]) {
-    for (let { element, originalCssText } of entryStyleChanges)
+function removeTempStyles(styleChanges: { element: HTMLElement; originalCssText: string; }[]) {
+    for (let { element, originalCssText } of styleChanges)
         element.style.cssText = originalCssText;
 }
 
@@ -96,7 +103,7 @@ function applyExitStyles(exiting: FlipNode[]) {
             height: node.previous!.rect.height + 'px',
             margin: 0,
             boxSizing: 'border-box'
-        }, node.config.exitStyles || defaults.exitStyles);
+        }, node.exitConfig?.styles ?? defaults.exit.styles);
         offsetParent.appendChild(element);
     }
 }

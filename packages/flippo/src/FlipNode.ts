@@ -1,7 +1,7 @@
-import { FlipAnimation, IFlipConfig, StyleValues } from "./FlipAnimation";
 import { defaults } from "./Defaults";
-import { pick } from "./Utils";
+import { FlipAnimation, IAnimationConfig, IFlipConfig, StyleProperty, StyleValues, TransformConfig, identityTransform } from "./FlipAnimation";
 import { queueFlip } from "./FlipRegistry";
+import { pick } from "./Utils";
 
 export class FlipNode {
     constructor(
@@ -48,10 +48,13 @@ export class FlipNode {
     snapshot() {
         if (this.element) {
             this.previous = this.current;
-            let animateProps = this.config.animateProps ?? ['opacity'];
+            let styles = this.state == 'entering' ? this.enterConfig?.styles ?? defaults.enter.styles
+                : this.state == 'exiting' ? this.exitConfig?.styles ?? defaults.exit.styles
+                    : this.updateConfig?.styles ?? defaults.update.styles;
+            let snapshotProps = Object.keys(styles) as StyleProperty[];
             this.current = {
                 rect: this.element.getBoundingClientRect(),
-                styles: animateProps.length ? pick(getComputedStyle(this.element), animateProps) : {}
+                styles: snapshotProps.length ? pick(getComputedStyle(this.element), snapshotProps) : {}
             }
         }
     }
@@ -59,19 +62,22 @@ export class FlipNode {
     prepareAnimation() {
         if (this.element) {
             let element = this.element;
-            let scaleX = this.config.positionOnly ? 1 : this.previous!.rect.width / this.current!.rect.width;
-            let scaleY = this.config.positionOnly ? 1 : this.previous!.rect.height / this.current!.rect.height;
-            let translateX = this.previous!.rect.left - this.current!.rect.left;
-            let translateY = this.previous!.rect.top - this.current!.rect.top;
+            let scaleX = transformEnabled(this.config.scale, 'x') ? this.previous!.rect.width / this.current!.rect.width : identityTransform.scaleX;
+            let scaleY = transformEnabled(this.config.scale, 'y') ? this.previous!.rect.height / this.current!.rect.height : identityTransform.scaleY;
+            let translateX = transformEnabled(this.config.position, 'x') ? this.previous!.rect.left - this.current!.rect.left : identityTransform.translateX;
+            let translateY = transformEnabled(this.config.position, 'y') ? this.previous!.rect.top - this.current!.rect.top : identityTransform.translateY;
 
             this.animation = new FlipAnimation(
                 element,
                 { scaleX, scaleY, translateX, translateY },
                 this.previous!.styles as Keyframe,
                 this.current!.styles as Keyframe,
-                this.state == 'entering' ? this.config.enterAnimation ?? defaults.enterAnimation
-                    : this.state == 'exiting' ? this.config.exitAnimation ?? defaults.exitAnimation
-                        : this.config.updateAnimation ?? defaults.updateAnimation,
+                this.state == 'entering' ? this.enterConfig
+                    : this.state == 'exiting' ? this.exitConfig
+                        : this.updateConfig,
+                this.state == 'entering' ? defaults.enter
+                    : this.state == 'exiting' ? defaults.exit
+                        : defaults.update,
                 this.parent?.animation,
                 this.parent && {
                     x: this.parent.current!.rect.left - this.current!.rect.left,
@@ -85,6 +91,23 @@ export class FlipNode {
                 this.animation.finished.then(() => element.remove());
         }
     }
+
+    get enterConfig() { return animationConfig(this.config.enter); }
+    get updateConfig() { return animationConfig(this.config.update); }
+    get exitConfig() { return animationConfig(this.config.exit); }
+}
+
+function animationConfig(config: Partial<IAnimationConfig> | boolean | undefined) {
+    return config == true ? undefined
+        : config == false ? noAnimation
+            : config;
+}
+
+const noAnimation: Partial<IAnimationConfig> = { durationMs: 0, delayMs: 0 };
+
+function transformEnabled(transform: TransformConfig | undefined, axis: 'x' | 'y') {
+    return transform === true
+        || transform == axis;
 }
 
 type FlipState = 'pending' | 'entering' | 'exiting' | 'updating';

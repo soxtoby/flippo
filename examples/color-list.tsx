@@ -29,7 +29,7 @@ function randomOrder(source: string[]) {
 }
 
 function Color({ color }: { color: string }) {
-    return <Flip>
+    return <Flip position="y">
         <div className="color">
             <div className="color-swatch" style={{ color }}></div>
             <div className="color-name">{color}</div>
