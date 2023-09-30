@@ -1,3 +1,4 @@
+import { Snapshot } from "./FlipNode";
 import { cancelFrame, queueFrame } from "./FrameQueue";
 
 export type TimingFunction = ((fraction: number) => number) & { css: string };
@@ -38,21 +39,49 @@ export class FlipAnimation {
     private _finish!: () => void;
 
     constructor(
-        public readonly element: HTMLElement,
-        public readonly fromTransform: TransformProperties,
-        public readonly fromStyles: Keyframe,
-        public readonly toStyles: Keyframe,
-        public readonly animationConfig: Partial<IAnimationConfig> | undefined,
-        public readonly defaultAnimationConfig: IAnimationConfig,
-        public readonly parent?: FlipAnimation,
-        public readonly offsetFromParent?: { x: number; y: number; },
-        public readonly relativeToParent = false
+        public element: HTMLElement,
+        public from: Snapshot,
+        public to: Snapshot,
+        scale: TransformConfig,
+        position: TransformConfig,
+        animationConfig: Partial<IAnimationConfig> | undefined,
+        defaultAnimationConfig: IAnimationConfig,
+        public parent?: FlipAnimation
     ) {
-        this.transform = fromTransform;
+        this.delayMs = animationConfig?.delayMs ?? defaultAnimationConfig.delayMs;
+        this.durationMs = animationConfig?.durationMs ?? defaultAnimationConfig.durationMs;
+        this.timing = animationConfig?.timing ?? defaultAnimationConfig.timing;
+    
+        let relativeToParent = !!to.offset && !!from.offset;
+        this.initialTransform = {
+            scaleX: transformEnabled(scale, 'x')
+                ? from.rect.width / to.rect.width
+                : identityTransform.scaleX,
+            scaleY: transformEnabled(scale, 'y')
+                ? from.rect.height / to.rect.height
+                : identityTransform.scaleY,
+    
+            translateX: transformEnabled(position, 'x')
+                ? relativeToParent
+                    ? from.offset!.x - to.offset!.x
+                    : from.rect.left - to.rect.left
+                : identityTransform.translateX,
+            translateY: transformEnabled(position, 'y')
+                ? relativeToParent
+                    ? from.offset!.y - to.offset!.y
+                    : from.rect.top - to.rect.top
+                : identityTransform.translateY,
+        };
+
         this.finished = new Promise(resolve => this._finish = resolve);
     }
 
-    transform: TransformProperties;
+    readonly delayMs: number;
+    readonly durationMs: number;
+    readonly timing: TimingFunction;
+
+    readonly initialTransform: TransformProperties;
+    readonly transform: TransformProperties = { ...identityTransform };
     readonly finished: Promise<void>;
     private _nextAnimationFrame = -1;
 
@@ -60,45 +89,40 @@ export class FlipAnimation {
 
     play() {
         this._playState = 'running';
-        let delayMs = this.animationConfig?.delayMs ?? this.defaultAnimationConfig.delayMs;
-        let durationMs = this.animationConfig?.durationMs ?? this.defaultAnimationConfig.durationMs;
-        let timing = this.animationConfig?.timing ?? this.defaultAnimationConfig.timing;
+
         this._cssAnimation = this.element.animate([
-            { transformOrigin: '0 0', ...this.fromStyles },
-            { transformOrigin: '0 0', ...this.toStyles }
+            { transformOrigin: '0 0', ...(this.from.styles as Keyframe) },
+            { transformOrigin: '0 0', ...(this.to.styles as Keyframe) }
         ], {
             fill: 'backwards',
-            delay: delayMs,
-            duration: durationMs,
-            easing: timing.css,
+            delay: this.delayMs,
+            duration: this.durationMs,
+            easing: this.timing.css
         });
 
-        this.nextFrame(delayMs, durationMs, timing);
+        // Pause temporarily to allow debugging animation starting state across entire flip batch
+        this._cssAnimation.pause();
+        queueMicrotask(() => this._cssAnimation!.play());
+
+        this.nextFrame();
     }
 
-    private nextFrame(delayMs: number, durationMs: number, timing: TimingFunction) {
+    private nextFrame = () => {
         let elapsedMs = this._cssAnimation!.currentTime as number;
 
-        if (elapsedMs < delayMs + durationMs) {
-            if (elapsedMs >= delayMs) {
-                if (this.transform == this.fromTransform)
-                    this.transform = {} as TransformProperties; // Make sure not to change the fromTransform object
+        if (elapsedMs < this.delayMs + this.durationMs) {
+            if (elapsedMs >= this.delayMs) {
+                let fraction = this.timing((elapsedMs - this.delayMs) / this.durationMs);
+                this.transform.scaleX = this.initialTransform.scaleX + fraction * (identityTransform.scaleX - this.initialTransform.scaleX);
+                this.transform.scaleY = this.initialTransform.scaleY + fraction * (identityTransform.scaleY - this.initialTransform.scaleY);
+                this.transform.translateX = this.initialTransform.translateX + fraction * (identityTransform.translateX - this.initialTransform.translateX);
+                this.transform.translateY = this.initialTransform.translateY + fraction * (identityTransform.translateY - this.initialTransform.translateY);
 
-                let fraction = timing((elapsedMs - delayMs) / durationMs);
-                this.transform.scaleX = this.fromTransform.scaleX + fraction * (identityTransform.scaleX - this.fromTransform.scaleX);
-                this.transform.scaleY = this.fromTransform.scaleY + fraction * (identityTransform.scaleY - this.fromTransform.scaleY);
-                this.transform.translateX = this.fromTransform.translateX + fraction * (identityTransform.translateX - this.fromTransform.translateX);
-                this.transform.translateY = this.fromTransform.translateY + fraction * (identityTransform.translateY - this.fromTransform.translateY);
-
-                let undoParentTransform = this.parent
+                let undoParentScale = this.parent
                     ? [
-                        translate(this.offsetFromParent!.x, this.offsetFromParent!.y),
+                        translate(-this.to.offset!.x, -this.to.offset!.y),
                         scale(1 / this.parent.transform.scaleX, 1 / this.parent.transform.scaleY),
-                        // Only undo parent translation if node is being translated itself, and not relative to parent
-                        (this.fromTransform.translateX != identityTransform.translateX || this.fromTransform.translateY != identityTransform.translateY) && !this.relativeToParent
-                            ? translate(-this.parent.transform.translateX, -this.parent.transform.translateY)
-                            : '',
-                        translate(-this.offsetFromParent!.x, -this.offsetFromParent!.y),
+                        translate(this.to.offset!.x, this.to.offset!.y),
                     ].filter(Boolean).join(' ') + ' '
                     : '';
                 let ownTransform = [
@@ -106,10 +130,10 @@ export class FlipAnimation {
                     scale(this.transform.scaleX, this.transform.scaleY),
                 ].filter(Boolean).join(' ');
 
-                this.element.style.transform = undoParentTransform + ownTransform;
+                this.element.style.transform = undoParentScale + ownTransform;
             }
 
-            this._nextAnimationFrame = queueFrame(() => this.nextFrame(delayMs, durationMs, timing));
+            this._nextAnimationFrame = queueFrame(this.nextFrame);
         } else {
             this.finish();
         }
@@ -123,6 +147,11 @@ export class FlipAnimation {
         this._nextAnimationFrame = -1;
         this._finish();
     }
+}
+
+function transformEnabled(transform: TransformConfig, axis: 'x' | 'y') {
+    return transform === true
+        || transform == axis;
 }
 
 function scale(x: number, y: number) {

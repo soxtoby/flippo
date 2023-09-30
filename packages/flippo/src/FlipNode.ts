@@ -1,5 +1,5 @@
 import { defaults } from "./Defaults";
-import { FlipAnimation, IAnimationConfig, IFlipConfig, StyleProperty, StyleValues, TransformConfig, identityTransform } from "./FlipAnimation";
+import { FlipAnimation, IAnimationConfig, IFlipConfig, StyleProperty, StyleValues } from "./FlipAnimation";
 import { queueFlip } from "./FlipRegistry";
 import { pick } from "./Utils";
 
@@ -63,49 +63,26 @@ export class FlipNode {
         }
     }
 
-    prepareAnimation() {
+    animateFlip() {
         if (this.element) {
             let element = this.element;
-            let previous = this.previous!;
-            let current = this.current!;
-
-            let scaleX = transformEnabled(this.config.scale, 'x')
-                ? previous.rect.width / current.rect.width
-                : identityTransform.scaleX;
-            let scaleY = transformEnabled(this.config.scale, 'y')
-                ? previous.rect.height / current.rect.height
-                : identityTransform.scaleY;
-
-            let relativeToParent = !!current.offset && !!previous.offset;
-            let translateX = transformEnabled(this.config.position, 'x')
-                ? relativeToParent
-                    ? previous.offset!.x - current.offset!.x
-                    : previous.rect.left - current.rect.left
-                : identityTransform.translateX;
-            let translateY = transformEnabled(this.config.position, 'y')
-                ? relativeToParent
-                    ? previous.offset!.y - current.offset!.y
-                    : previous.rect.top - current.rect.top
-                : identityTransform.translateY;
 
             this.animation = new FlipAnimation(
                 element,
-                { scaleX, scaleY, translateX, translateY },
-                previous.styles as Keyframe,
-                current.styles as Keyframe,
+                this.previous!,
+                this.current!,
+                this.config.scale ?? true,
+                this.config.position ?? true,
                 this.state == 'entering' ? this.enterConfig
                     : this.state == 'exiting' ? this.exitConfig
                         : this.updateConfig,
                 this.state == 'entering' ? defaults.enter
                     : this.state == 'exiting' ? defaults.exit
                         : defaults.update,
-                this.parent?.animation,
-                this.parent && {
-                    x: this.parent.current!.rect.left - this.current!.rect.left,
-                    y: this.parent.current!.rect.top - this.current!.rect.top
-                },
-                relativeToParent
+                this.parent?.animation
             );
+
+            this.animation.play();
 
             if (this.state == 'entering')
                 this.animation.finished.then(() => this.state = 'updating');
@@ -127,14 +104,9 @@ function animationConfig(config: Partial<IAnimationConfig> | boolean | undefined
 
 const noAnimation: Partial<IAnimationConfig> = { durationMs: 0, delayMs: 0 };
 
-function transformEnabled(transform: TransformConfig | undefined, axis: 'x' | 'y') {
-    return transform === true
-        || transform == axis;
-}
-
 type FlipState = 'pending' | 'entering' | 'exiting' | 'updating';
 
-interface Snapshot {
+export interface Snapshot {
     rect: DOMRect;
     /** Offset from parent FlipNode */
     offset?: { x: number; y: number; };

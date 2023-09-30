@@ -81,13 +81,10 @@ function flip() {
         node.snapshot();
 
     for (let node of toFlip)
-        node.prepareAnimation();
+        node.animateFlip();
 
     for (let exiting of toExit)
         deregister(exiting);
-
-    for (let node of toFlip)
-        node.animation!.play();
 }
 
 function applyTempStyles(nodes: FlipNode[], getFlipStyles: (node: FlipNode) => StyleValues) {
