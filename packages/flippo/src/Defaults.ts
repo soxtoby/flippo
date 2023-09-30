@@ -1,5 +1,5 @@
-import bezier = require("bezier-easing");
-import { IFlipAnimationConfigs, TimingFunction } from "./FlipAnimation";
+import bezier from "bezier-easing";
+import type { IFlipAnimationConfigs, TimingFunction } from "./FlipAnimation.js";
 
 export const defaultTiming = {
     get update() { return cubicBezier(.4, 0, .2, 1); },

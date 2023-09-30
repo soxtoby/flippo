@@ -1,4 +1,4 @@
-export * from "./Defaults";
-export { IAnimationConfig, IFlipConfig } from "./FlipAnimation";
-export * from "./FlipNode";
-export { deregister, mount, register, unmount } from "./FlipRegistry";
+export * from "./Defaults.js";
+export type { IAnimationConfig, IFlipConfig } from "./FlipAnimation.js";
+export * from "./FlipNode.js";
+export { deregister, mount, register, unmount } from "./FlipRegistry.js";

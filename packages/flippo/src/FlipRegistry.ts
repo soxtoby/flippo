@@ -1,7 +1,7 @@
-import { defaults } from "./Defaults";
-import { IFlipConfig, StyleValues } from "./FlipAnimation";
-import { FlipNode } from "./FlipNode";
-import { getOrAdd } from "./Utils";
+import { defaults } from "./Defaults.js";
+import type { IFlipConfig, StyleValues } from "./FlipAnimation.js";
+import { FlipNode } from "./FlipNode.js";
+import { getOrAdd } from "./Utils.js";
 
 let isFlipPending = false;
 let isFlippingGroup = false;

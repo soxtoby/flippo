@@ -1,7 +1,7 @@
-import { defaults } from "./Defaults";
-import { FlipAnimation, IAnimationConfig, IFlipConfig, StyleProperty, StyleValues } from "./FlipAnimation";
-import { queueFlip } from "./FlipRegistry";
-import { pick } from "./Utils";
+import { defaults } from "./Defaults.js";
+import { FlipAnimation, type IAnimationConfig, type IFlipConfig, type StyleProperty, type StyleValues } from "./FlipAnimation.js";
+import { queueFlip } from "./FlipRegistry.js";
+import { pick } from "./Utils.js";
 
 export class FlipNode {
     constructor(

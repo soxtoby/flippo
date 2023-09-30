@@ -1,0 +1,11 @@
+{
+    "files": [],
+    "references": [
+        {
+            "path": "packages/flippo/tsconfig.cjs.json"
+        },
+        {
+            "path": "packages/flippo-react/tsconfig.cjs.json"
+        },
+    ]
+}

@@ -1,5 +1,5 @@
-import { Snapshot } from "./FlipNode";
-import { cancelFrame, queueFrame } from "./FrameQueue";
+import type { Snapshot } from "./FlipNode.js";
+import { cancelFrame, queueFrame } from "./FrameQueue.js";
 
 export type TimingFunction = ((fraction: number) => number) & { css: string };
 export type StyleProperty = Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule' | 'getPropertyPriority' | 'getPropertyValue' | 'item' | 'removeProperty' | 'setProperty'>;

@@ -1,12 +1,17 @@
 {
-    "extends": "./tsconfig.base.json",
     "files": [],
     "references": [
         {
-            "path": "packages/flippo"
+            "path": "./packages/flippo/tsconfig.json"
         },
         {
-            "path": "packages/flippo-react"
+            "path": "./packages/flippo-react/tsconfig.json"
+        },
+        {
+            "path": "./packages/flippo/tsconfig.cjs.json"
+        },
+        {
+            "path": "./packages/flippo-react/tsconfig.cjs.json"
         },
     ]
 }

@@ -1,6 +1,6 @@
-import { FlipNode, IFlipConfig, mount, register, unmount } from "flippo";
-import { DependencyList, ReactElement, RefCallback, cloneElement, createContext, createElement, useContext, useId, useLayoutEffect, useMemo, useRef } from "react";
-import { useFlipScopeContext } from "./FlipScope";
+import { FlipNode, type IFlipConfig, mount, register, unmount } from "flippo";
+import { type DependencyList, type ReactElement, type RefCallback, cloneElement, createContext, createElement, useContext, useId, useLayoutEffect, useMemo, useRef } from "react";
+import { useFlipScopeContext } from "./FlipScope.js";
 
 export interface IFlipProps extends IFlipConfig {
     id?: string;

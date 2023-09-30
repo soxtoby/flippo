@@ -2,8 +2,18 @@
   "name": "flippo",
   "version": "0.3.1",
   "description": "Flipping easy transitions",
-  "main": "lib/index.js",
-  "types": "lib/index",
+  "type": "module",
+  "main": "./cjs/index.js",
+  "exports": {
+    "import": {
+      "types": "./esm/index.d.ts",
+      "default": "./esm/index.js"
+    },
+    "require": {
+      "types": "./cjs/index.d.ts",
+      "default": "./cjs/index.js"
+    }
+  },
   "homepage": "https://github.com/soxtoby/flippo",
   "repository": {
     "type": "git",
@@ -13,7 +23,8 @@
   "author": "Simon Oxtoby",
   "license": "MIT",
   "files": [
-    "lib"
+    "esm",
+    "cjs"
   ],
   "dependencies": {
     "bezier-easing": "^2.1.0"

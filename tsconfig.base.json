@@ -1,16 +1,23 @@
 {
   "compilerOptions": {
-    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
     "target": "ES2022",
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
     "lib": [
-      "esnext",
-      "dom"
+      "ES2022",
+      "DOM"
     ],
-    "module": "commonjs",
+    "composite": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "inlineSources": true,
-    "skipLibCheck": true
+    "inlineSources": true
   }
 }

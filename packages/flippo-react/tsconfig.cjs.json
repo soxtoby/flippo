@@ -1,0 +1,12 @@
+{
+    "extends": "../../tsconfig.base.cjs.json",
+    "compilerOptions": {
+        "outDir": "cjs",
+        "rootDir": "src",
+    },
+    "references": [
+        {
+            "path": "../flippo/tsconfig.cjs.json"
+        }
+    ]
+}

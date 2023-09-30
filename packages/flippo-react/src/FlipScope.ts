@@ -1,5 +1,5 @@
-import { IAnimationConfig } from "flippo";
-import { ReactNode, createContext, createElement, useContext, useEffect, useLayoutEffect, useMemo } from "react";
+import type { IAnimationConfig } from "flippo";
+import { createContext, createElement, useContext, useEffect, useLayoutEffect, useMemo, type ReactNode } from "react";
 
 export interface IFlipScopeProps {
     id?: string;
