@@ -45,7 +45,8 @@ export class FlipAnimation {
         public readonly animationConfig: Partial<IAnimationConfig> | undefined,
         public readonly defaultAnimationConfig: IAnimationConfig,
         public readonly parent?: FlipAnimation,
-        public readonly offsetFromParent?: { x: number; y: number; }
+        public readonly offsetFromParent?: { x: number; y: number; },
+        public readonly relativeToParent = false
     ) {
         this.transform = fromTransform;
         this.finished = new Promise(resolve => this._finish = resolve);
@@ -93,8 +94,8 @@ export class FlipAnimation {
                     ? [
                         translate(this.offsetFromParent!.x, this.offsetFromParent!.y),
                         scale(1 / this.parent.transform.scaleX, 1 / this.parent.transform.scaleY),
-                        // Only undo parent translation if node is being translated itself
-                        this.fromTransform.translateX != identityTransform.translateX || this.fromTransform.translateY != identityTransform.translateY
+                        // Only undo parent translation if node is being translated itself, and not relative to parent
+                        (this.fromTransform.translateX != identityTransform.translateX || this.fromTransform.translateY != identityTransform.translateY) && !this.relativeToParent
                             ? translate(-this.parent.transform.translateX, -this.parent.transform.translateY)
                             : '',
                         translate(-this.offsetFromParent!.x, -this.offsetFromParent!.y),

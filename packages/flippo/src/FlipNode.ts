@@ -52,8 +52,12 @@ export class FlipNode {
                 : this.state == 'exiting' ? this.exitConfig?.styles ?? defaults.exit.styles
                     : this.updateConfig?.styles ?? defaults.update.styles;
             let snapshotProps = Object.keys(styles) as StyleProperty[];
+            let rect = this.element.getBoundingClientRect();
             this.current = {
-                rect: this.element.getBoundingClientRect(),
+                rect,
+                offset: this.parent?.current
+                    ? { x: rect.x - this.parent.current.rect.x, y: rect.y - this.parent.current.rect.y }
+                    : undefined,
                 styles: snapshotProps.length ? pick(getComputedStyle(this.element), snapshotProps) : {}
             }
         }
@@ -62,16 +66,33 @@ export class FlipNode {
     prepareAnimation() {
         if (this.element) {
             let element = this.element;
-            let scaleX = transformEnabled(this.config.scale, 'x') ? this.previous!.rect.width / this.current!.rect.width : identityTransform.scaleX;
-            let scaleY = transformEnabled(this.config.scale, 'y') ? this.previous!.rect.height / this.current!.rect.height : identityTransform.scaleY;
-            let translateX = transformEnabled(this.config.position, 'x') ? this.previous!.rect.left - this.current!.rect.left : identityTransform.translateX;
-            let translateY = transformEnabled(this.config.position, 'y') ? this.previous!.rect.top - this.current!.rect.top : identityTransform.translateY;
+            let previous = this.previous!;
+            let current = this.current!;
+
+            let scaleX = transformEnabled(this.config.scale, 'x')
+                ? previous.rect.width / current.rect.width
+                : identityTransform.scaleX;
+            let scaleY = transformEnabled(this.config.scale, 'y')
+                ? previous.rect.height / current.rect.height
+                : identityTransform.scaleY;
+
+            let relativeToParent = !!current.offset && !!previous.offset;
+            let translateX = transformEnabled(this.config.position, 'x')
+                ? relativeToParent
+                    ? previous.offset!.x - current.offset!.x
+                    : previous.rect.left - current.rect.left
+                : identityTransform.translateX;
+            let translateY = transformEnabled(this.config.position, 'y')
+                ? relativeToParent
+                    ? previous.offset!.y - current.offset!.y
+                    : previous.rect.top - current.rect.top
+                : identityTransform.translateY;
 
             this.animation = new FlipAnimation(
                 element,
                 { scaleX, scaleY, translateX, translateY },
-                this.previous!.styles as Keyframe,
-                this.current!.styles as Keyframe,
+                previous.styles as Keyframe,
+                current.styles as Keyframe,
                 this.state == 'entering' ? this.enterConfig
                     : this.state == 'exiting' ? this.exitConfig
                         : this.updateConfig,
@@ -82,7 +103,8 @@ export class FlipNode {
                 this.parent && {
                     x: this.parent.current!.rect.left - this.current!.rect.left,
                     y: this.parent.current!.rect.top - this.current!.rect.top
-                }
+                },
+                relativeToParent
             );
 
             if (this.state == 'entering')
@@ -114,5 +136,7 @@ type FlipState = 'pending' | 'entering' | 'exiting' | 'updating';
 
 interface Snapshot {
     rect: DOMRect;
+    /** Offset from parent FlipNode */
+    offset?: { x: number; y: number; };
     styles: StyleValues;
 }

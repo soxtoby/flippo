@@ -114,14 +114,22 @@ function applyExitStyles(exiting: FlipNode[]) {
     for (let node of exiting) {
         let element = node.element!;
         let offsetParent = node.offsetParent!;
-        let parentRect = getOrAdd(parentRects, offsetParent, () => offsetParent.getBoundingClientRect());
+        let offsetParentRect = getOrAdd(parentRects, offsetParent, () => offsetParent.getBoundingClientRect());
+
+        let current = node.current!;
+        let parentNodeRect = node.parent?.current?.rect;
+
         Object.assign(element.style, {
-            ...node.previous!.styles,
+            ...current.styles,
             position: 'absolute',
-            top: (node.previous!.rect.top - parentRect.top) + 'px',
-            left: (node.previous!.rect.left - parentRect.left) + 'px',
-            width: node.previous!.rect.width + 'px',
-            height: node.previous!.rect.height + 'px',
+            top: (current.offset && parentNodeRect
+                ? offsetParentRect.top - parentNodeRect.top + current.offset.y
+                : current.rect.top - offsetParentRect.top) + 'px',
+            left: (current.offset && parentNodeRect
+                ? offsetParentRect.left - parentNodeRect.left + current.offset.x
+                : current.rect.left - offsetParentRect.left) + 'px',
+            width: current.rect.width + 'px',
+            height: current.rect.height + 'px',
             margin: 0,
             boxSizing: 'border-box'
         }, node.exitConfig?.styles ?? defaults.exit.styles);
