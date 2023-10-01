@@ -1,5 +1,5 @@
-import { defaults } from "./Defaults.js";
-import type { IFlipConfig, StyleValues } from "./FlipAnimation.js";
+import { defaults, type IFlipConfig } from "./Config.js";
+import type { StyleValues } from "./FlipAnimation.js";
 import { FlipNode } from "./FlipNode.js";
 import { getOrAdd } from "./Utils.js";
 

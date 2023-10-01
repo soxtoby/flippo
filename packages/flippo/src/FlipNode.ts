@@ -1,5 +1,5 @@
-import { defaults } from "./Defaults.js";
-import { FlipAnimation, type IAnimationConfig, type IFlipConfig, type StyleProperty, type StyleValues } from "./FlipAnimation.js";
+import { defaults, type IAnimationConfig, type IFlipConfig } from "./Config.js";
+import { FlipAnimation, type StyleProperty, type StyleValues } from "./FlipAnimation.js";
 import { queueFlip } from "./FlipRegistry.js";
 import { pick } from "./Utils.js";
 
@@ -111,5 +111,5 @@ export interface Snapshot {
     rect: DOMRect;
     /** Offset from parent FlipNode */
     offset?: { x: number; y: number; };
-    styles: StyleValues;
+    styles: Record<string, string | number | null | undefined>;
 }

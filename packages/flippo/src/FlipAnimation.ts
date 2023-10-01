@@ -1,4 +1,4 @@
-import { defaults } from "./Defaults.js";
+import { defaults, type IAnimationConfig, type TransformConfig } from "./Config.js";
 import type { Snapshot } from "./FlipNode.js";
 import { cancelFrame, queueFrame } from "./FrameQueue.js";
 
@@ -7,35 +7,6 @@ export type StyleProperty = Exclude<keyof CSSStyleDeclaration, 'length' | 'paren
 
 /** Specify a value to animate to, or <c>true</c> to automatically transition the property. */
 export type StyleValues = { [P in StyleProperty]?: CSSStyleDeclaration[P] | true };
-
-export interface IAnimationConfig {
-    durationMs: number;
-    delayMs: number;
-    timing: TimingFunction;
-    styles: StyleValues;
-}
-
-export interface IFlipAnimationConfigs {
-    playbackRate: number;
-    enter: IAnimationConfig;
-    update: IAnimationConfig;
-    exit: IAnimationConfig;
-}
-
-export interface IFlipAnimationOverrides {
-    playbackRate?: number;
-    enter?: Partial<IAnimationConfig> | boolean;
-    update?: Partial<IAnimationConfig> | boolean;
-    exit?: Partial<IAnimationConfig> | boolean;
-}
-
-export interface IFlipConfig extends IFlipAnimationOverrides {
-    group?: string;
-    position?: TransformConfig;
-    scale?: TransformConfig;
-}
-
-export type TransformConfig = boolean | 'x' | 'y';
 
 export class FlipAnimation {
     private _playState: AnimationPlayState = 'idle';
@@ -96,8 +67,8 @@ export class FlipAnimation {
         this._playState = 'running';
 
         this._cssAnimation = this.element.animate([
-            { transformOrigin: '0 0', ...(this.from.styles as Keyframe) },
-            { transformOrigin: '0 0', ...(this.to.styles as Keyframe) }
+            { transformOrigin: '0 0', ...this.from.styles },
+            { transformOrigin: '0 0', ...this.to.styles }
         ], {
             fill: 'backwards',
             delay: this.delayMs,

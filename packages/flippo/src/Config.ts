@@ -1,5 +1,34 @@
 import bezier from "bezier-easing";
-import type { IFlipAnimationConfigs, TimingFunction } from "./FlipAnimation.js";
+import type { StyleValues, TimingFunction } from "./FlipAnimation.js";
+
+export interface IAnimationConfig {
+    durationMs: number;
+    delayMs: number;
+    timing: TimingFunction;
+    styles: StyleValues;
+}
+
+export interface IFlipAnimationConfigs {
+    playbackRate: number;
+    enter: IAnimationConfig;
+    update: IAnimationConfig;
+    exit: IAnimationConfig;
+}
+
+export interface IFlipAnimationOverrides {
+    playbackRate?: number;
+    enter?: Partial<IAnimationConfig> | boolean;
+    update?: Partial<IAnimationConfig> | boolean;
+    exit?: Partial<IAnimationConfig> | boolean;
+}
+
+export interface IFlipConfig extends IFlipAnimationOverrides {
+    group?: string;
+    position?: TransformConfig;
+    scale?: TransformConfig;
+}
+
+export type TransformConfig = boolean | 'x' | 'y';
 
 export const defaultTiming = {
     get update() { return cubicBezier(.4, 0, .2, 1); },
@@ -21,7 +50,7 @@ export const defaultDelay = {
 
 export const defaultDurationMs = 300;
 
-export const defaults: IFlipAnimationConfigs = {
+export const defaults = {
     playbackRate: 1,
     enter: {
         durationMs: defaultDuration.enter(defaultDurationMs),
@@ -48,7 +77,7 @@ export const defaults: IFlipAnimationConfigs = {
             opacity: '0'
         }
     }
-}
+} as const satisfies IFlipAnimationConfigs;
 
 export function cubicBezier(x1: number, y1: number, x2: number, y2: number): TimingFunction {
     return Object.assign(bezier(x1, y1, x2, y2), { css: `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})` });
