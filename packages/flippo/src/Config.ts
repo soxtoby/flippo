@@ -1,6 +1,12 @@
 import bezier from "bezier-easing";
 import type { StyleValues, TimingFunction } from "./FlipAnimation.js";
 
+export let isFlippingDisabled = false;
+
+export function disableFlipping(disable = true) {
+    isFlippingDisabled = disable;
+}
+
 export interface IAnimationConfig {
     durationMs: number;
     delayMs: number;

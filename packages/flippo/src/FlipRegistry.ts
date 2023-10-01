@@ -1,4 +1,4 @@
-import { defaults, type IFlipConfig } from "./Config.js";
+import { defaults, isFlippingDisabled, type IFlipConfig } from "./Config.js";
 import type { StyleValues } from "./FlipAnimation.js";
 import { FlipNode } from "./FlipNode.js";
 import { getOrAdd } from "./Utils.js";
@@ -37,6 +37,9 @@ export function deregister(node: FlipNode) {
 }
 
 export function queueFlip(group?: string) {
+    if (isFlippingDisabled)
+        return;
+
     if (!isFlipPending) {
         isFlipPending = true;
         queueMicrotask(flip);
