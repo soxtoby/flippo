@@ -41,8 +41,8 @@ export class FlipNode {
         if (!this.isFlipPending && this.element) {
             this.isFlipPending = true;
             this.snapshot();
-            queueFlip(this.config.group);
         }
+        queueFlip(this.config.group);
     }
 
     snapshot() {
