@@ -19,6 +19,7 @@ export function Flip({ id, deps, children, ...config }: IFlipProps) {
             config.group = scope.id + ':' + config.group;
     }
 
+    config.playbackRate ??= scope.config.playbackRate;
     config.enter ??= scope.enter ?? scope.config.enter;
     config.update ??= scope.config.update;
     if (config.exit == null) // Scope will only provide exit config when it's unmounting, so need to evaluate dynamically

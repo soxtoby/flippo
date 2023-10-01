@@ -22,6 +22,7 @@ export const defaultDelay = {
 export const defaultDurationMs = 300;
 
 export const defaults: IFlipAnimationConfigs = {
+    playbackRate: 1,
     enter: {
         durationMs: defaultDuration.enter(defaultDurationMs),
         delayMs: defaultDelay.enter(defaultDurationMs),

@@ -1,3 +1,4 @@
+import { defaults } from "./Defaults.js";
 import type { Snapshot } from "./FlipNode.js";
 import { cancelFrame, queueFrame } from "./FrameQueue.js";
 
@@ -15,12 +16,14 @@ export interface IAnimationConfig {
 }
 
 export interface IFlipAnimationConfigs {
+    playbackRate: number;
     enter: IAnimationConfig;
     update: IAnimationConfig;
     exit: IAnimationConfig;
 }
 
 export interface IFlipAnimationOverrides {
+    playbackRate?: number;
     enter?: Partial<IAnimationConfig> | boolean;
     update?: Partial<IAnimationConfig> | boolean;
     exit?: Partial<IAnimationConfig> | boolean;
@@ -45,6 +48,7 @@ export class FlipAnimation {
         public readonly to: Snapshot,
         scale: TransformConfig,
         position: TransformConfig,
+        public readonly playbackRate: number = defaults.playbackRate,
         animationConfig: Partial<IAnimationConfig> | undefined,
         defaultAnimationConfig: IAnimationConfig,
         public readonly parent?: FlipAnimation
@@ -100,6 +104,7 @@ export class FlipAnimation {
             duration: this.durationMs,
             easing: this.timing.css
         });
+        this._cssAnimation.playbackRate = this.playbackRate;
 
         // Pause temporarily to allow debugging animation starting state across entire flip batch
         this._cssAnimation.pause();
