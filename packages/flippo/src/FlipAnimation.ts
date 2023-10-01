@@ -20,13 +20,14 @@ export interface IFlipAnimationConfigs {
     exit: IAnimationConfig;
 }
 
-export interface IFlipConfig {
-    group?: string;
-
+export interface IFlipAnimationOverrides {
     enter?: Partial<IAnimationConfig> | boolean;
     update?: Partial<IAnimationConfig> | boolean;
     exit?: Partial<IAnimationConfig> | boolean;
+}
 
+export interface IFlipConfig extends IFlipAnimationOverrides {
+    group?: string;
     position?: TransformConfig;
     scale?: TransformConfig;
 }
@@ -39,19 +40,19 @@ export class FlipAnimation {
     private _finish!: () => void;
 
     constructor(
-        public element: HTMLElement,
-        public from: Snapshot,
-        public to: Snapshot,
+        public readonly element: HTMLElement,
+        public readonly from: Snapshot,
+        public readonly to: Snapshot,
         scale: TransformConfig,
         position: TransformConfig,
         animationConfig: Partial<IAnimationConfig> | undefined,
         defaultAnimationConfig: IAnimationConfig,
-        public parent?: FlipAnimation
+        public readonly parent?: FlipAnimation
     ) {
         this.delayMs = animationConfig?.delayMs ?? defaultAnimationConfig.delayMs;
         this.durationMs = animationConfig?.durationMs ?? defaultAnimationConfig.durationMs;
         this.timing = animationConfig?.timing ?? defaultAnimationConfig.timing;
-    
+
         let relativeToParent = !!to.offset && !!from.offset;
         this.initialTransform = {
             scaleX: transformEnabled(scale, 'x')
@@ -60,7 +61,7 @@ export class FlipAnimation {
             scaleY: transformEnabled(scale, 'y')
                 ? from.rect.height / to.rect.height
                 : identityTransform.scaleY,
-    
+
             translateX: transformEnabled(position, 'x')
                 ? relativeToParent
                     ? from.offset!.x - to.offset!.x

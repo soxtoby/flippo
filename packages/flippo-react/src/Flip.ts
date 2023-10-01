@@ -9,9 +9,7 @@ export interface IFlipProps extends IFlipConfig {
     children: ReactElement | ((ref: RefCallback<HTMLElement>) => ReactElement);
 }
 
-export function Flip(props: IFlipProps) {
-    let { id, deps, children, ...config } = props;
-
+export function Flip({ id, deps, children, ...config }: IFlipProps) {
     let scope = useFlipScopeContext();
 
     id ??= useId();
@@ -21,10 +19,10 @@ export function Flip(props: IFlipProps) {
             config.group = scope.id + ':' + config.group;
     }
 
-    config.enter ??= scope.enter;
-    config.update ??= scope.update;
-    if (config.exit == null)
-        Object.defineProperty(config, 'exit', { get: () => scope.exit }); // Scope will only provide exit config when it's unmounting
+    config.enter ??= scope.enter ?? scope.config.enter;
+    config.update ??= scope.config.update;
+    if (config.exit == null) // Scope will only provide exit config when it's unmounting, so need to evaluate dynamically
+        Object.defineProperty(config, 'exit', { get: () => scope.exit ?? scope.config.exit });
 
     let parent = useContext(FlipNodeContext);
     let node = register(id, config, parent);
