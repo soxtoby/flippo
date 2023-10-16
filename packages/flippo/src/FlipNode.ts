@@ -71,8 +71,8 @@ export class FlipNode {
                 element,
                 this.previous!,
                 this.current!,
-                this.config.scale ?? true,
-                this.config.position ?? true,
+                this.config.scale ?? false,
+                this.config.position ?? false,
                 this.config.playbackRate,
                 this.state == 'entering' ? this.enterConfig
                     : this.state == 'exiting' ? this.exitConfig
