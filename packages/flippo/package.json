@@ -1,6 +1,6 @@
 {
   "name": "flippo",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Flipping easy transitions",
   "type": "module",
   "main": "./cjs/index.js",

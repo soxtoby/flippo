@@ -17,8 +17,8 @@ export class FlipAnimation {
         public readonly element: HTMLElement,
         public readonly from: Snapshot,
         public readonly to: Snapshot,
-        scale: TransformConfig,
-        position: TransformConfig,
+        scaleConfig: TransformConfig,
+        positionConfig: TransformConfig,
         public readonly playbackRate: number = defaults.playbackRate,
         animationConfig: Partial<IAnimationConfig> | undefined,
         defaultAnimationConfig: IAnimationConfig,
@@ -30,19 +30,19 @@ export class FlipAnimation {
 
         let relativeToParent = !!to.offset && !!from.offset;
         this.initialTransform = {
-            scaleX: transformEnabled(scale, 'x')
+            scaleX: transformEnabled(scaleConfig, 'x')
                 ? from.rect.width / to.rect.width
                 : identityTransform.scaleX,
-            scaleY: transformEnabled(scale, 'y')
+            scaleY: transformEnabled(scaleConfig, 'y')
                 ? from.rect.height / to.rect.height
                 : identityTransform.scaleY,
 
-            translateX: transformEnabled(position, 'x')
+            translateX: transformEnabled(positionConfig, 'x')
                 ? relativeToParent
                     ? from.offset!.x - to.offset!.x
                     : from.rect.left - to.rect.left
                 : identityTransform.translateX,
-            translateY: transformEnabled(position, 'y')
+            translateY: transformEnabled(positionConfig, 'y')
                 ? relativeToParent
                     ? from.offset!.y - to.offset!.y
                     : from.rect.top - to.rect.top
