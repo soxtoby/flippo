@@ -4,6 +4,9 @@
   "description": "Flipping easy transitions in React",
   "type": "module",
   "main": "./cjs/index.js",
+  "scripts": {
+    "prepack": "cp ../../readme.md . && cp ../../LICENSE ."
+  },
   "exports": {
     "import": {
       "types": "./esm/index.d.ts",
@@ -30,7 +33,7 @@
     "@types/react": "*"
   },
   "dependencies": {
-    "flippo": ">=0.4.0"
+    "flippo": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18"

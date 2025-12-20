@@ -4,6 +4,9 @@
   "description": "Flipping easy transitions",
   "type": "module",
   "main": "./cjs/index.js",
+  "scripts": {
+    "prepack": "cp ../../readme.md . && cp ../../LICENSE ."
+  },
   "exports": {
     "import": {
       "types": "./esm/index.d.ts",

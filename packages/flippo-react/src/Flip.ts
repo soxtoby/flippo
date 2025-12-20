@@ -6,7 +6,7 @@ export interface IFlipProps extends IFlipConfig {
     id?: string;
     /** If specified, will only flip when deps change. */
     deps?: DependencyList;
-    children: ReactElement | ((ref: RefCallback<HTMLElement>) => ReactElement);
+    children: ReactElement<any> | ((ref: RefCallback<HTMLElement>) => ReactElement<any>);
 }
 
 export function Flip({ id, deps, children, ...config }: IFlipProps) {
@@ -28,9 +28,9 @@ export function Flip({ id, deps, children, ...config }: IFlipProps) {
     let parent = useContext(FlipNodeContext);
     let node = register(id, config, parent);
 
-    useMemo(() => node.flip(), deps); // If deps aren't specified, will flip on every render
+    useMemo(() => node.flip(), deps!); // If deps aren't specified, will flip on every render
 
-    let elementRef = useRef<HTMLElement>();
+    let elementRef = useRef<HTMLElement>(null);
 
     useLayoutEffect(() => {
         let element = elementRef.current!; // Need to unmount the same element that was mounted
