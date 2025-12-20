@@ -1,11 +1,11 @@
-import { Link, Redirect, Router } from "@reach/router";
 import { enableDebugging } from "flippo-react";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Link, Redirect, Route, Switch, useRoute } from "wouter";
 import { Basic } from "./basic";
 import { Colors } from "./color-list";
 import { Expand } from "./expand";
-import "./main.less";
+import "./main.css";
 let hippo = require("../assets/hippo.svg");
 
 createRoot(document.getElementById('root')!)
@@ -13,6 +13,7 @@ createRoot(document.getElementById('root')!)
 
 function Main() {
     let [debug, setDebug] = useState(false);
+
     useEffect(() => {
         enableDebugging(debug);
     }, [debug]);
@@ -21,21 +22,28 @@ function Main() {
         <header>
             <img src={hippo} width={32} height={32} />
             <h3>Flippo Examples</h3>
-            <Link to="basic">Basic Examples</Link>
-            <Link to="colors">2D List</Link>
-            <Link to="expand">Parent/Child</Link>
+            <NavLink href="/">Basic Examples</NavLink>
+            <NavLink href="/colors">2D List</NavLink>
+            <NavLink href="/expand">Parent/Child</NavLink>
             <label>
                 <input type="checkbox" checked={debug} onChange={e => setDebug(e.target.checked)} />
                 <span>Debug</span>
             </label>
         </header>
-        <article>
-            <Router>
-                <Redirect from="/" to="basic" />
-                <Basic path="basic" />
-                <Colors path="colors" />
-                <Expand path="expand" />
-            </Router>
-        </article>
+        <main>
+            <Switch>
+                <Route path="/" component={Basic} />
+                <Route path="/colors" component={Colors} />
+                <Route path="/expand" component={Expand} />
+                <Route><Redirect to="/" /></Route>
+            </Switch>
+        </main>
     </>
+}
+
+function NavLink(props: { href: string, children: React.ReactNode }) {
+    let [isActive] = useRoute(props.href);
+    return <Link href={props.href}>
+        <a className={isActive ? 'is-active' : ''}>{props.children}</a>
+    </Link>;
 }

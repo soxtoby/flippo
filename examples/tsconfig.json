@@ -1,6 +1,11 @@
 {
-    "extends": "../tsconfig.base.cjs.json",
+    "extends": "../tsconfig.base.json",
     "compilerOptions": {
-        "jsx": "react-jsxdev"
+        "jsx": "react-jsxdev",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "types": [
+            "bun"
+        ]
     }
 }

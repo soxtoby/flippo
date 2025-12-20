@@ -1,9 +1,9 @@
 import { Flip, FlipScope } from "flippo-react";
 import { useState } from "react";
-import "./color-list.less";
+import "./color-list.css";
 import { colors } from "./colors";
 
-export function Colors(props: { path: string }) {
+export function Colors() {
     let [shownColors, setColors] = useState(colors.slice());
 
     return <div className="example">

@@ -1,8 +1,8 @@
 import { Flip, FlipScope } from "flippo-react";
-import { ReactNode, useState } from "react";
-import "./basic.less";
+import { type ReactNode, useState } from "react";
+import "./basic.css";
 
-export function Basic(props: { path: string }) {
+export function Basic() {
     return <FlipScope enter={false} exit={false}>
         <FlippingDemo />
         <VisibilityDemo />

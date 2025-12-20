@@ -1,9 +1,9 @@
 import { Flip, FlipScope } from "flippo-react";
 import { memo, useState } from "react";
 import { colors } from "./colors";
-import "./expand.less";
+import "./expand.css";
 
-export function Expand(props: { path: string }) {
+export function Expand() {
     let [singleExpansion, setSingleExpansion] = useState(true);
     let [expandedColor, setExpandedColor] = useState(colors[0]);
 

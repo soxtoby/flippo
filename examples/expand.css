@@ -33,11 +33,13 @@
     border-radius: 8px;
 }
 
-.is-colorCard-expanded .colorCard-swatch {
-    width: 64px;
-    height: 64px;
-}
+.is-colorCard-expanded {
+    & .colorCard-swatch {
+        width: 64px;
+        height: 64px;
+    }
 
-.is-colorCard-expanded .colorCard-name {
-    font-size: xx-large;
+    & .colorCard-name {
+        font-size: xx-large;
+    }
 }

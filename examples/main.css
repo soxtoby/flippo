@@ -16,28 +16,33 @@ header {
     display: flex;
     align-items: center;
     border-bottom: 1px solid lightgrey;
+
+    & > * {
+        margin-left: 16px;
+    }
+
+    & a {
+        text-decoration: none;
+    }
 }
 
-header>* {
-    margin-left: 16px;
-}
-
-header a {
-    text-decoration: none;
-}
-
-article {
+main {
     display: block;
     flex: 1 1 0px;
-    overflow: hidden;
-    margin: 16px;
-}
-
-article>* {
-    height: 100%;
     overflow: auto;
+    padding: 16px;
 }
 
-label>* {
-    vertical-align: text-bottom;
+label {
+    & > * {
+        vertical-align: text-bottom;
+    }
+}
+
+a {
+    color: inherit;
+
+    &.is-active {
+        text-decoration: underline;
+    }
 }

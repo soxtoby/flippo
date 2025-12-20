@@ -16,7 +16,7 @@
     "scripts": {
         "prepare": "tsc -b",
         "watch": "tsc -b -w",
-        "examples": "cd examples && parcel index.html --open"
+        "examples": "cd examples && bun --hot serve.ts"
     },
     "devDependencies": {
         "typescript": "*"
